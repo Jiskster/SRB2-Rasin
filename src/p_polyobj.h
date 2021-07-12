@@ -114,6 +114,9 @@ typedef struct polyobj_s
 	// these are saved for netgames, so do not let Lua touch these!
 	INT32 spawnflags; // Flags the polyobject originally spawned with
 	INT32 spawntrans; // Translucency the polyobject originally spawned with
+
+	fixed_t origx, origy, origz; //TODO: add commentary
+	INT16 origangle;
 } polyobj_t;
 
 //
@@ -172,6 +175,8 @@ typedef struct polywaypoint_s
 	UINT8 returnbehavior;  // behavior after reaching the last waypoint
 	UINT8 continuous;      // continuously move - used with PWR_WRAP or PWR_COMEBACK
 	UINT8 stophere;        // Will stop after it reaches the next waypoint
+	mobj_t *target; // next waypoint mobj
+	//TODO: check if do we need *target, seems unecessary????
 } polywaypoint_t;
 
 typedef struct polyslidedoor_s

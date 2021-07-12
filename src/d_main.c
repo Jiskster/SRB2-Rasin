@@ -68,6 +68,7 @@
 #include "filesrch.h" // refreshdirmenu, mainwadstally
 #include "g_input.h" // tutorial mode control scheming
 #include "m_perfstats.h"
+#include "i_net.h" // for netvariabletime (srb2netplus)
 
 #ifdef CMAKECONFIG
 #include "config.h"
@@ -610,6 +611,28 @@ static void D_Display(void)
 			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-10, V_YELLOWMAP, s);
 		}
 
+		//netsimstat srb2netplus
+		if (cv_netsimstat.value && netDebugText[0] != 0)
+		{
+			const char* str = netDebugText;
+			int y = 0;
+
+			while (str != NULL)
+			{
+				char temp[1024];
+				const char* nextStr = strstr(str + 1, "\n");
+				int len = nextStr ? nextStr - str : strlen(str);
+
+				memcpy(temp, str, len);
+				temp[len] = 0;
+
+				V_DrawRightAlignedSmallString(BASEVIDWIDTH, y, V_YELLOWMAP, temp);
+
+				y += 5;
+				str = nextStr ? nextStr + 1 : NULL;
+			}
+		}
+
 		if (cv_perfstats.value)
 		{
 			M_DrawPerfStats();
@@ -717,10 +740,11 @@ void D_SRB2Loop(void)
 			realtics = 1;
 
 		// process tics (but maybe not if realtic == 0)
-		TryRunTics(realtics);
+		TryRunTics(realtics, entertic);
 
 		if (lastdraw || singletics || gametic > rendergametic)
 		{
+
 			rendergametic = gametic;
 			rendertimeout = entertic+TICRATE/17;
 

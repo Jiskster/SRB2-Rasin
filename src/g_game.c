@@ -115,6 +115,14 @@ INT32 consoleplayer; // player taking events and displaying
 INT32 displayplayer; // view being displayed
 INT32 secondarydisplayplayer; // for splitscreen
 
+tic_t simtic; // simulated tic
+tic_t neededtic;
+tic_t targetsimtic; // target simulated tic
+tic_t smoothedTic;
+boolean canSimulate;
+tic_t finaltargetsimtic;
+// boolean canPlaySounds;
+
 tic_t gametic;
 tic_t levelstarttic; // gametic at level start
 UINT32 ssspheres; // old special stage
@@ -2316,10 +2324,14 @@ void G_Ticker(boolean run)
 			if (titledemo)
 				F_TitleDemoTicker();
 			P_Ticker(run); // tic the game
-			ST_Ticker(run);
-			F_TextPromptTicker();
-			AM_Ticker();
-			HU_Ticker();
+			//do not draw any GUI during sims
+			if ((issimulation && finaltargetsimtic == simtic) || (!canSimulate))
+			{
+				ST_Ticker(run);
+				F_TextPromptTicker();
+				AM_Ticker();
+				HU_Ticker();
+			}
 			break;
 
 		case GS_INTERMISSION:

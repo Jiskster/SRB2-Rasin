@@ -93,6 +93,15 @@ typedef struct
 	// handle of the sound being played
 	INT32 handle;
 
+	// whether the sound is detached from its source (sound panning should not be changed)
+	boolean isdetached;
+
+	// positioning for detached sounds
+	fixed_t detachedx, detachedy, detachedz;
+
+	//TODO: positioning for smoothed sound positions relative to the smoothed object position
+	fixed_t smoothedx, smoothedy, smoothedz;
+
 } channel_t;
 
 typedef struct {
@@ -149,6 +158,9 @@ void S_StartSoundAtVolume(const void *origin, sfxenum_t sound_id, INT32 volume);
 
 // Stop sound for thing at <origin>
 void S_StopSound(void *origin);
+
+// Detaches a sound from an object, leaving it in the air at the object's original position
+void S_DetachChannelsFromOrigin(void* origin);
 
 //
 // Music Status

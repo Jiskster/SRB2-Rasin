@@ -1344,6 +1344,10 @@ void Polyobj_InitLevel(void)
 			qitem = (mobjqitem_t *)M_QueueIterator(&spawnqueue);
 
 			Polyobj_spawnPolyObj(i, qitem->mo, Tag_FGet(&qitem->mo->spawnpoint->tags));
+			PolyObjects[i].origx = qitem->mo->x;
+			PolyObjects[i].origy = qitem->mo->y;
+			PolyObjects[i].origz = qitem->mo->z;
+			PolyObjects[i].origangle = qitem->mo->spawnpoint->angle;
 		}
 
 		// move polyobjects to spawn points
