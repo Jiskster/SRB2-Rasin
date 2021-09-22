@@ -3590,11 +3590,14 @@ static void P_DoClimbing(player_t *player)
 #define CLIMBCONEMAX FixedAngle(90*FRACUNIT)
 	if (!demoplayback || P_ControlStyle(player) == CS_LMAOGALOG)
 	{
-		angle_t angdiff = P_GetLocalAngle(player) - player->mo->angle;
-		if (angdiff < ANGLE_180 && angdiff > CLIMBCONEMAX)
-			P_SetLocalAngle(player, player->mo->angle + CLIMBCONEMAX);
-		else if (angdiff > ANGLE_180 && angdiff < InvAngle(CLIMBCONEMAX))
-			P_SetLocalAngle(player, player->mo->angle - CLIMBCONEMAX);
+		if (canSimulate && (finaltargetsimtic == simtic) || !canSimulate)
+		{
+			angle_t angdiff = P_GetLocalAngle(player) - player->mo->angle;
+			if (angdiff < ANGLE_180 && angdiff > CLIMBCONEMAX)
+				P_SetLocalAngle(player, player->mo->angle + CLIMBCONEMAX);
+			else if (angdiff > ANGLE_180 && angdiff < InvAngle(CLIMBCONEMAX))
+				P_SetLocalAngle(player, player->mo->angle - CLIMBCONEMAX);
+		}
 	}
 
 	if (player->climbing == 0)
@@ -9836,7 +9839,10 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	if (!thiscam->chase && !resetcalled)
 	{
 		if (player == &players[consoleplayer])
+		{
 			focusangle = localangle;
+
+		}
 		else if (player == &players[secondarydisplayplayer])
 			focusangle = localangle2;
 		else
@@ -9960,6 +9966,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		focusangle = R_PointToAngle2(thiscam->x, thiscam->y, mo->x, mo->y);
 		if (player == &players[consoleplayer])
 		{
+
 			if (focusangle >= localangle)
 				P_ForceLocalAngle(player, localangle + (abs((signed)(focusangle - localangle))>>5));
 			else
@@ -10956,11 +10963,14 @@ static void P_MinecartThink(player_t *player)
 
 		if (angdiff + minecart->angle != player->mo->angle && (!demoplayback || P_ControlStyle(player) == CS_LMAOGALOG))
 		{
-			angdiff = P_GetLocalAngle(player) - minecart->angle;
-			if (angdiff < ANGLE_180 && angdiff > MINECARTCONEMAX)
-				P_SetLocalAngle(player, minecart->angle + MINECARTCONEMAX);
-			else if (angdiff > ANGLE_180 && angdiff < InvAngle(MINECARTCONEMAX))
-				P_SetLocalAngle(player, minecart->angle - MINECARTCONEMAX);
+			if (canSimulate && (finaltargetsimtic == simtic) || !canSimulate)
+			{
+				angdiff = P_GetLocalAngle(player) - minecart->angle;
+				if (angdiff < ANGLE_180 && angdiff > MINECARTCONEMAX)
+					P_SetLocalAngle(player, minecart->angle + MINECARTCONEMAX);
+				else if (angdiff > ANGLE_180 && angdiff < InvAngle(MINECARTCONEMAX))
+					P_SetLocalAngle(player, minecart->angle - MINECARTCONEMAX);
+			}
 
 
 		}
@@ -12934,7 +12944,7 @@ angle_t P_GetLocalAngle(player_t *player)
 {
 	if (player == &players[consoleplayer])
 		return localangle;
-	else if (player == &players[secondarydisplayplayer])
+	if (player == &players[secondarydisplayplayer])
 		return localangle2;
 	else
 		return 0;
@@ -12942,12 +12952,15 @@ angle_t P_GetLocalAngle(player_t *player)
 
 void P_ForceLocalAngle(player_t *player, angle_t angle)
 {
-	angle = angle & ~UINT16_MAX;
+	if (canSimulate && (finaltargetsimtic == simtic) || !canSimulate)
+	{
+		angle = angle & ~UINT16_MAX;
 
-	if (player == &players[consoleplayer])
-		localangle = angle;
-	else if (player == &players[secondarydisplayplayer])
-		localangle2 = angle;
+		if (player == &players[consoleplayer])
+			localangle = angle;
+		else if (player == &players[secondarydisplayplayer])
+			localangle2 = angle;
+	}
 }
 
 boolean P_PlayerFullbright(player_t *player)

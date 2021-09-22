@@ -388,6 +388,9 @@ static void M_DrawRoomMenu(void);
 static void M_DrawJoystick(void);
 static void M_DrawSetupMultiPlayerMenu(void);
 
+// NetPlus Options Menu for drawing network graphics
+static void M_NetPlusMenu(void);
+
 // Handling functions
 static boolean M_ExitPandorasBox(void);
 static boolean M_QuitMultiPlayerMenu(void);
@@ -4721,6 +4724,196 @@ static void M_DrawGenericScrollMenu(void)
 	V_DrawScaledPatch(currentMenu->x - 24, cursory, 0,
 		W_CachePatchName("M_CURSOR", PU_PATCH));
 }
+
+// note that alphakey is multiplied by 2 for scrolling menus to allow greater usage in UINT8 range.
+// accepts rectangle boundaries, the skull is not drawn if cursory is outside of boundaries
+// also accepts functions to draw header and footer. yay flexibiluty
+// works in menus where the menu has non-scrollable header and footer
+// first, it draws the header. then the scrollable menu
+// then the footer
+// the skull position must be shared across the header or footer or problems will occur!
+// static void M_DrawHeaderFooterScrollMenu_VariableSize(void header, void footer)
+// {
+// 	INT32 x, y, i, max, bottom, tempcentery, cursory = 0;
+
+// 	// DRAW MENU
+// 	x = currentMenu->x;
+// 	y = currentMenu->y;
+
+// 	if (currentMenu->menuitems[currentMenu->numitems-1].alphaKey < scrollareaheight)
+// 		tempcentery = currentMenu->y; // Not tall enough to scroll, but this thinker is used in case it becomes so
+// 	else if ((currentMenu->menuitems[itemOn].alphaKey*2 - currentMenu->menuitems[0].alphaKey*2) <= scrollareaheight)
+// 		tempcentery = currentMenu->y - currentMenu->menuitems[0].alphaKey*2;
+// 	else if ((currentMenu->menuitems[currentMenu->numitems-1].alphaKey*2 - currentMenu->menuitems[itemOn].alphaKey*2) <= scrollareaheight)
+// 		tempcentery = currentMenu->y - currentMenu->menuitems[currentMenu->numitems-1].alphaKey*2 + 2*scrollareaheight;
+// 	else
+// 		tempcentery = currentMenu->y - currentMenu->menuitems[itemOn].alphaKey*2 + scrollareaheight;
+
+// 	for (i = 0; i < currentMenu->numitems; i++)
+// 	{
+// 		if (currentMenu->menuitems[i].status != IT_DISABLED && currentMenu->menuitems[i].alphaKey*2 + tempcentery >= currentMenu->y)
+// 			break;
+// 	}
+
+// 	for (bottom = currentMenu->numitems; bottom > 0; bottom--)
+// 	{
+// 		if (currentMenu->menuitems[bottom-1].status != IT_DISABLED)
+// 			break;
+// 	}
+
+// 	for (max = bottom; max > 0; max--)
+// 	{
+// 		if (currentMenu->menuitems[max-1].status != IT_DISABLED && currentMenu->menuitems[max-1].alphaKey*2 + tempcentery <= (currentMenu->y + 2*scrollareaheight))
+// 			break;
+// 	}
+
+// 	if (i)
+// 		V_DrawString(currentMenu->x - 20, currentMenu->y - (skullAnimCounter/5), V_YELLOWMAP, "\x1A"); // up arrow
+// 	if (max != bottom)
+// 		V_DrawString(currentMenu->x - 20, currentMenu->y + 2*scrollareaheight + (skullAnimCounter/5), V_YELLOWMAP, "\x1B"); // down arrow
+
+// 	// draw title (or big pic)
+// 	M_DrawMenuTitle();
+
+// 	for (; i < max; i++)
+// 	{
+// 		y = currentMenu->menuitems[i].alphaKey*2 + tempcentery;
+// 		if (i == itemOn)
+// 			cursory = y;
+// 		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
+// 		{
+// 			case IT_PATCH:
+// 			case IT_DYBIGSPACE:
+// 			case IT_BIGSLIDER:
+// 			case IT_STRING2:
+// 			case IT_DYLITLSPACE:
+// 			case IT_GRAYPATCH:
+// 			case IT_TRANSTEXT2:
+// 				// unsupported
+// 				break;
+// 			case IT_NOTHING:
+// 				break;
+// 			case IT_STRING:
+// 			case IT_WHITESTRING:
+// 				if (i != itemOn && (currentMenu->menuitems[i].status & IT_DISPLAY)==IT_STRING)
+// 					V_DrawString(x, y, 0, currentMenu->menuitems[i].text);
+// 				else
+// 					V_DrawString(x, y, V_YELLOWMAP, currentMenu->menuitems[i].text);
+
+// 				// Cvar specific handling
+// 				switch (currentMenu->menuitems[i].status & IT_TYPE)
+// 					case IT_CVAR:
+// 					{
+// 						consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+// 						switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
+// 						{
+// 							case IT_CV_SLIDER:
+// 								M_DrawSlider(x, y, cv, (i == itemOn));
+// 							case IT_CV_NOPRINT: // color use this
+// 							case IT_CV_INVISSLIDER: // monitor toggles use this
+// 								break;
+// 							case IT_CV_STRING:
+// #if 1
+// 								if (y + 12 > (currentMenu->y + 2*scrollareaheight))
+// 									break;
+// 								M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
+// 								V_DrawString(x + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
+// 								if (skullAnimCounter < 4 && i == itemOn)
+// 									V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 12,
+// 										'_' | 0x80, false);
+// #else // cool new string type stuff, not ready for limelight
+// 								if (i == itemOn)
+// 								{
+// 									V_DrawFill(x-2, y-1, MAXSTRINGLENGTH*8 + 4, 8+3, 159);
+// 									V_DrawString(x, y, V_ALLOWLOWERCASE, cv->string);
+// 									if (skullAnimCounter < 4)
+// 										V_DrawCharacter(x + V_StringWidth(cv->string, 0), y, '_' | 0x80, false);
+// 								}
+// 								else
+// 									V_DrawRightAlignedString(BASEVIDWIDTH - x, y,
+// 									V_YELLOWMAP|V_ALLOWLOWERCASE, cv->string);
+// #endif
+// 								break;
+// 							default:
+// 								V_DrawRightAlignedString(BASEVIDWIDTH - x, y,
+// 									((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? V_REDMAP : V_YELLOWMAP), cv->string);
+// 								if (i == itemOn)
+// 								{
+// 									V_DrawCharacter(BASEVIDWIDTH - x - 10 - V_StringWidth(cv->string, 0) - (skullAnimCounter/5), y,
+// 											'\x1C' | V_YELLOWMAP, false);
+// 									V_DrawCharacter(BASEVIDWIDTH - x + 2 + (skullAnimCounter/5), y,
+// 											'\x1D' | V_YELLOWMAP, false);
+// 								}
+// 								break;
+// 						}
+// 						break;
+// 					}
+// 					break;
+// 			case IT_TRANSTEXT:
+// 				switch (currentMenu->menuitems[i].status & IT_TYPE)
+// 				{
+// 					case IT_PAIR:
+// 						V_DrawString(x, y,
+// 								V_TRANSLUCENT, currentMenu->menuitems[i].patch);
+// 						V_DrawRightAlignedString(BASEVIDWIDTH - x, y,
+// 								V_TRANSLUCENT, currentMenu->menuitems[i].text);
+// 						break;
+// 					default:
+// 						V_DrawString(x, y,
+// 								V_TRANSLUCENT, currentMenu->menuitems[i].text);
+// 				}
+// 				break;
+// 			case IT_QUESTIONMARKS:
+// 				V_DrawString(x, y, V_TRANSLUCENT|V_OLDSPACING, M_CreateSecretMenuOption(currentMenu->menuitems[i].text));
+// 				break;
+// 			case IT_HEADERTEXT:
+// 				//V_DrawString(x-16, y, V_YELLOWMAP, currentMenu->menuitems[i].text);
+// 				M_DrawLevelPlatterHeader(y - (lsheadingheight - 12), currentMenu->menuitems[i].text, true, false);
+// 				break;
+// 		}
+// 	}
+
+// 	// DRAW THE SKULL CURSOR
+// 	V_DrawScaledPatch(currentMenu->x - 24, cursory, 0,
+// 		W_CachePatchName("M_CURSOR", PU_PATCH));
+// }
+
+/*
+* The bar is filled with DrawFill from left to right
+* The white colored bar shows the network delay
+* 
+* The first parameter is INPUT DELAY
+It can be: Fixed, Variable (simtype.value)
+- "Fixed" means that that no matter the network conditions, you'll expect the same input delay.
+If the input delay time is more than network round trip time, then your netcmds will be delayed. If the input delay is less than RTT, then the rollback netcode will be activated up to RTT ticks times. The slider will not be moving.
+- "Vatiable" means how much max tics to ever simulate if needed. That's it. xD
+* The second parameter is ROLLBACK, that's the slider in the bar you control. (simtics.value)
+It enables rollback if the delay is above a certain point.
+It looks like this: 
+ROLLBACK: IF ABOVE 114ms (4 TICS)
+The leftmost slider position changes the string to:
+"PURE ROLLBACK"  
+The leftmost slider position changes the string to:
+"PURE INPUT DELAY" 
+
+* In the middle above	 the bar there's "Ping: 120ms" string
+
+The slider will be the header. All other parameters are drawn in the generic menu
+*/
+/// \brief Shows network conditions in a bar
+// static void M_DrawNetStatisticsHeader(INT32 xpos, INT32 ypos, INT32 width, INT32 height)
+// {
+// 	V_DrawFill(x, y, width, height, 159);
+// 	// V_DrawCharacter(x + 8 + V_StringWidth(setupm_name, V_ALLOWLOWERCASE), y + 3, '_' | 0x80, false);
+// 	if (!netgame)
+// 	{	
+// 		V_DrawCenteredString(x, y, V_ALLOWLOWERCASE, "You are not in a network game")
+// 		return;
+// 	}
+
+// 	return;
+// }
+
 
 static void M_DrawPauseMenu(void)
 {

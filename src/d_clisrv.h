@@ -51,6 +51,8 @@ applications may follow different packet versions.
 #define MAXSIMULATIONS TICRATE //one second of simulations
 #define MAXLOCALSAVESTATES 8
 
+
+extern tic_t liveTic;
 //
 // Packet structure
 //

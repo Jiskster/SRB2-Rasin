@@ -15,7 +15,7 @@
 ///        plus functions to parse command line parameters, configure game
 ///        parameters, and call the startup functions.
 
-#if (defined (__unix__) && !defined (MSDOS)) || defined(__APPLE__) || defined (UNIXCOMMON)
+#if (defined(__unix__) && !defined(MSDOS)) || defined(__APPLE__) || defined(UNIXCOMMON)
 #include <sys/stat.h>
 #include <sys/types.h>
 #endif
@@ -58,17 +58,18 @@
 #include "d_netfil.h"
 #include "m_cheat.h"
 #include "y_inter.h"
-#include "p_local.h" // chasecam
-#include "mserv.h" // ms_RoomId
-#include "m_misc.h" // screenshot functionality
+#include "p_local.h"	// chasecam
+#include "mserv.h"		// ms_RoomId
+#include "m_misc.h"		// screenshot functionality
 #include "deh_tables.h" // Dehacked list test
-#include "m_cond.h" // condition initialization
+#include "m_cond.h"		// condition initialization
 #include "fastcmp.h"
 #include "keys.h"
 #include "filesrch.h" // refreshdirmenu, mainwadstally
-#include "g_input.h" // tutorial mode control scheming
+#include "g_input.h"  // tutorial mode control scheming
 #include "m_perfstats.h"
 #include "i_net.h" // for netvariabletime (srb2netplus)
+#include "p_savenetrb.h"
 
 #ifdef CMAKECONFIG
 #include "config.h"
@@ -91,7 +92,7 @@
 #include "lua_script.h"
 
 // Version numbers for netplay :upside_down_face:
-int    VERSION;
+int VERSION;
 int SUBVERSION;
 
 // platform independant focus loss
@@ -156,15 +157,15 @@ boolean dedicated = false;
 void D_PostEvent(const event_t *ev)
 {
 	events[eventhead] = *ev;
-	eventhead = (eventhead+1) & (MAXEVENTS-1);
+	eventhead = (eventhead + 1) & (MAXEVENTS - 1);
 }
 
 // modifier keys
 // Now handled in I_OsPolling
-UINT8 shiftdown = 0; // 0x1 left, 0x2 right
-UINT8 ctrldown = 0; // 0x1 left, 0x2 right
-UINT8 altdown = 0; // 0x1 left, 0x2 right
-boolean capslock = 0;	// gee i wonder what this does.
+UINT8 shiftdown = 0;  // 0x1 left, 0x2 right
+UINT8 ctrldown = 0;	  // 0x1 left, 0x2 right
+UINT8 altdown = 0;	  // 0x1 left, 0x2 right
+boolean capslock = 0; // gee i wonder what this does.
 
 //
 // D_ProcessEvents
@@ -176,7 +177,7 @@ void D_ProcessEvents(void)
 
 	boolean eaten;
 
-	for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
+	for (; eventtail != eventhead; eventtail = (eventtail + 1) & (MAXEVENTS - 1))
 	{
 		ev = &events[eventtail];
 
@@ -204,7 +205,7 @@ void D_ProcessEvents(void)
 		if (eaten)
 			continue; // menu ate the event
 
-		// console input
+			// console input
 #ifdef HAVE_THREADS
 		I_lock_mutex(&con_mutex);
 #endif
@@ -305,10 +306,8 @@ static void D_Display(void)
 		{
 			// Fade to black first
 			if ((wipegamestate == (gamestate_t)FORCEWIPE ||
-			        (wipegamestate != (gamestate_t)FORCEWIPEOFF
-						&& !(gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction)))
-					) // fades to black on its own timing, always
-			 && wipetypepre != UINT8_MAX)
+				 (wipegamestate != (gamestate_t)FORCEWIPEOFF && !(gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction)))) // fades to black on its own timing, always
+				&& wipetypepre != UINT8_MAX)
 			{
 				F_WipeStartScreen();
 				// Check for Mega Genesis fade
@@ -332,71 +331,72 @@ static void D_Display(void)
 	// do buffered drawing
 	switch (gamestate)
 	{
-		case GS_TITLESCREEN:
-			if (!titlemapinaction || !curbghide) {
-				F_TitleScreenDrawer();
-				break;
-			}
-			/* FALLTHRU */
-		case GS_LEVEL:
-			if (!gametic)
-				break;
-			HU_Erase();
-			AM_Drawer();
+	case GS_TITLESCREEN:
+		if (!titlemapinaction || !curbghide)
+		{
+			F_TitleScreenDrawer();
 			break;
+		}
+		/* FALLTHRU */
+	case GS_LEVEL:
+		if (!gametic)
+			break;
+		HU_Erase();
+		AM_Drawer();
+		break;
 
-		case GS_INTERMISSION:
-			Y_IntermissionDrawer();
-			HU_Erase();
-			HU_Drawer();
-			break;
+	case GS_INTERMISSION:
+		Y_IntermissionDrawer();
+		HU_Erase();
+		HU_Drawer();
+		break;
 
-		case GS_TIMEATTACK:
-			break;
+	case GS_TIMEATTACK:
+		break;
 
-		case GS_INTRO:
-			F_IntroDrawer();
-			if (wipegamestate == (gamestate_t)-1)
-				wipe = true;
-			break;
+	case GS_INTRO:
+		F_IntroDrawer();
+		if (wipegamestate == (gamestate_t)-1)
+			wipe = true;
+		break;
 
-		case GS_ENDING:
-			F_EndingDrawer();
-			HU_Erase();
-			HU_Drawer();
-			break;
+	case GS_ENDING:
+		F_EndingDrawer();
+		HU_Erase();
+		HU_Drawer();
+		break;
 
-		case GS_CUTSCENE:
-			F_CutsceneDrawer();
-			HU_Erase();
-			HU_Drawer();
-			break;
+	case GS_CUTSCENE:
+		F_CutsceneDrawer();
+		HU_Erase();
+		HU_Drawer();
+		break;
 
-		case GS_GAMEEND:
-			F_GameEndDrawer();
-			break;
+	case GS_GAMEEND:
+		F_GameEndDrawer();
+		break;
 
-		case GS_EVALUATION:
-			F_GameEvaluationDrawer();
-			HU_Erase();
-			HU_Drawer();
-			break;
+	case GS_EVALUATION:
+		F_GameEvaluationDrawer();
+		HU_Erase();
+		HU_Drawer();
+		break;
 
-		case GS_CONTINUING:
-			F_ContinueDrawer();
-			break;
+	case GS_CONTINUING:
+		F_ContinueDrawer();
+		break;
 
-		case GS_CREDITS:
-			F_CreditDrawer();
-			HU_Erase();
-			HU_Drawer();
-			break;
+	case GS_CREDITS:
+		F_CreditDrawer();
+		HU_Erase();
+		HU_Drawer();
+		break;
 
-		case GS_WAITINGPLAYERS:
-			// The clientconnect drawer is independent...
-		case GS_DEDICATEDSERVER:
-		case GS_NULL:
-			break;
+	case GS_WAITINGPLAYERS:
+		// The clientconnect drawer is independent...
+	case GS_DEDICATEDSERVER:
+	case GS_NULL:
+		break;
 	}
 
 	// STUPID race condition...
@@ -417,36 +417,36 @@ static void D_Display(void)
 				ps_rendercalltime = I_GetPreciseTime();
 				if (players[displayplayer].mo || players[displayplayer].playerstate == PST_DEAD)
 				{
-					topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
+					topleft = screens[0] + viewwindowy * vid.width + viewwindowx;
 					objectsdrawn = 0;
-	#ifdef HWRENDER
+#ifdef HWRENDER
 					if (rendermode != render_soft)
 						HWR_RenderPlayerView(0, &players[displayplayer]);
 					else
-	#endif
-					if (rendermode != render_none)
+#endif
+						if (rendermode != render_none)
 						R_RenderPlayerView(&players[displayplayer]);
 				}
 
 				// render the second screen
 				if (splitscreen && players[secondarydisplayplayer].mo)
 				{
-	#ifdef HWRENDER
+#ifdef HWRENDER
 					if (rendermode != render_soft)
 						HWR_RenderPlayerView(1, &players[secondarydisplayplayer]);
 					else
-	#endif
-					if (rendermode != render_none)
+#endif
+						if (rendermode != render_none)
 					{
 						viewwindowy = vid.height / 2;
-						M_Memcpy(ylookup, ylookup2, viewheight*sizeof (ylookup[0]));
+						M_Memcpy(ylookup, ylookup2, viewheight * sizeof(ylookup[0]));
 
-						topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
+						topleft = screens[0] + viewwindowy * vid.width + viewwindowx;
 
 						R_RenderPlayerView(&players[secondarydisplayplayer]);
 
 						viewwindowy = 0;
-						M_Memcpy(ylookup, ylookup1, viewheight*sizeof (ylookup[0]));
+						M_Memcpy(ylookup, ylookup1, viewheight * sizeof(ylookup[0]));
 					}
 				}
 
@@ -468,7 +468,7 @@ static void D_Display(void)
 			{
 				if (rendermode == render_soft)
 				{
-					VID_BlitLinearScreen(screens[0], screens[1], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
+					VID_BlitLinearScreen(screens[0], screens[1], vid.width * vid.bpp, vid.height, vid.width * vid.bpp, vid.rowbytes);
 					Y_ConsiderScreenBuffer();
 					usebuffer = true;
 				}
@@ -510,9 +510,9 @@ static void D_Display(void)
 		patch = W_CachePatchName("M_PAUSE", PU_PATCH);
 		V_DrawScaledPatch(viewwindowx + (BASEVIDWIDTH - patch->width)/2, py, 0, patch);
 #else
-		INT32 y = ((automapactive) ? (32) : (BASEVIDHEIGHT/2));
-		M_DrawTextBox((BASEVIDWIDTH/2) - (60), y - (16), 13, 2);
-		V_DrawCenteredString(BASEVIDWIDTH/2, y - (4), V_YELLOWMAP, "Game Paused");
+		INT32 y = ((automapactive) ? (32) : (BASEVIDHEIGHT / 2));
+		M_DrawTextBox((BASEVIDWIDTH / 2) - (60), y - (16), 13, 2);
+		V_DrawCenteredString(BASEVIDWIDTH / 2, y - (4), V_YELLOWMAP, "Game Paused");
 #endif
 	}
 
@@ -602,25 +602,25 @@ static void D_Display(void)
 			s[sizeof s - 1] = '\0';
 
 			snprintf(s, sizeof s - 1, "get %d b/s", getbps);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-40, V_YELLOWMAP, s);
+			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT - ST_HEIGHT - 40, V_YELLOWMAP, s);
 			snprintf(s, sizeof s - 1, "send %d b/s", sendbps);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-30, V_YELLOWMAP, s);
+			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT - ST_HEIGHT - 30, V_YELLOWMAP, s);
 			snprintf(s, sizeof s - 1, "GameMiss %.2f%%", gamelostpercent);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-20, V_YELLOWMAP, s);
+			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT - ST_HEIGHT - 20, V_YELLOWMAP, s);
 			snprintf(s, sizeof s - 1, "SysMiss %.2f%%", lostpercent);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-10, V_YELLOWMAP, s);
+			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT - ST_HEIGHT - 10, V_YELLOWMAP, s);
 		}
 
 		//netsimstat srb2netplus
 		if (cv_netsimstat.value && netDebugText[0] != 0)
 		{
-			const char* str = netDebugText;
+			const char *str = netDebugText;
 			int y = 0;
 
 			while (str != NULL)
 			{
 				char temp[1024];
-				const char* nextStr = strstr(str + 1, "\n");
+				const char *nextStr = strstr(str + 1, "\n");
 				int len = nextStr ? nextStr - str : strlen(str);
 
 				memcpy(temp, str, len);
@@ -658,7 +658,7 @@ void D_SRB2Loop(void)
 	if (dedicated)
 		server = true;
 
-	// Pushing of + parameters is now done back in D_SRB2Main, not here.
+		// Pushing of + parameters is now done back in D_SRB2Main, not here.
 
 #ifdef _WINDOWS
 	CONS_Printf("I_StartupMouse()...\n");
@@ -680,11 +680,11 @@ void D_SRB2Loop(void)
 	// Check and print which version is executed.
 	// Use this as the border between setup and the main game loop being entered.
 	CONS_Printf(
-	"===========================================================================\n"
-	"                   We hope you enjoy this game as\n"
-	"                     much as we did making it!\n"
-	"                            ...wait. =P\n"
-	"===========================================================================\n");
+		"===========================================================================\n"
+		"                   We hope you enjoy this game as\n"
+		"                     much as we did making it!\n"
+		"                            ...wait. =P\n"
+		"===========================================================================\n");
 
 	// hack to start on a nice clear console screen.
 	COM_ImmedExecute("cls;version");
@@ -746,7 +746,7 @@ void D_SRB2Loop(void)
 		{
 
 			rendergametic = gametic;
-			rendertimeout = entertic+TICRATE/17;
+			rendertimeout = entertic + TICRATE / 17;
 
 			// Update display, next frame, with current state.
 			D_Display();
@@ -818,7 +818,7 @@ void D_StartTitle(void)
 			{
 				char mapname[6];
 
-				strlcpy(mapname, G_BuildMapName(spstage_start), sizeof (mapname));
+				strlcpy(mapname, G_BuildMapName(spstage_start), sizeof(mapname));
 				strlwr(mapname);
 				mapname[5] = '\0';
 
@@ -879,7 +879,7 @@ void D_StartTitle(void)
 		CV_SetValue(&cv_mousemove, tutorialmousemove);
 		CV_SetValue(&cv_analog[0], tutorialanalog);
 		M_StartMessage("Do you want to \x82save the recommended \x82movement controls?\x80\n\nPress 'Y' or 'Enter' to confirm\nPress 'N' or any key to keep \nyour current controls",
-			M_TutorialSaveControlResponse, MM_YESNO);
+					   M_TutorialSaveControlResponse, MM_YESNO);
 	}
 	tutorialmode = false;
 }
@@ -898,7 +898,7 @@ static void D_AddFile(char **list, const char *file)
 	newfile = malloc(strlen(file) + 1);
 	if (!newfile)
 	{
-		I_Error("No more free memory to AddFile %s",file);
+		I_Error("No more free memory to AddFile %s", file);
 	}
 	strcpy(newfile, file);
 
@@ -929,7 +929,7 @@ static void ChangeDirForUrlHandler(void)
 		strlcpy(srb2path, myargv[0], sizeof(srb2path));
 
 		// Get just the directory, minus the EXE name
-		for (i = strlen(srb2path)-1; i > 0; i--)
+		for (i = strlen(srb2path) - 1; i > 0; i--)
 		{
 			if (srb2path[i] == '/' || srb2path[i] == '\\')
 			{
@@ -940,7 +940,7 @@ static void ChangeDirForUrlHandler(void)
 
 		CONS_Printf("%s\n", srb2path);
 
-#if defined (_WIN32)
+#if defined(_WIN32)
 		SetCurrentDirectoryA(srb2path);
 #else
 		if (chdir(srb2path) == -1)
@@ -958,7 +958,7 @@ static void IdentifyVersion(void)
 	char *srb2wad;
 	const char *srb2waddir = NULL;
 
-#if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
+#if (defined(__unix__) && !defined(MSDOS)) || defined(UNIXCOMMON) || defined(HAVE_SDL)
 	// change to the directory where 'srb2.pk3' is found
 	srb2waddir = I_LocateWad();
 #endif
@@ -966,7 +966,7 @@ static void IdentifyVersion(void)
 	// get the current directory (possible problem on NT with "." as current dir)
 	if (srb2waddir)
 	{
-		strlcpy(srb2path,srb2waddir,sizeof (srb2path));
+		strlcpy(srb2path, srb2waddir, sizeof(srb2path));
 	}
 	else
 	{
@@ -978,13 +978,13 @@ static void IdentifyVersion(void)
 		}
 	}
 
-#if defined (macintosh) && !defined (HAVE_SDL)
+#if defined(macintosh) && !defined(HAVE_SDL)
 	// cwd is always "/" when app is dbl-clicked
 	if (!stricmp(srb2waddir, "/"))
 		srb2waddir = I_GetWadDir();
 #endif
 	// Commercial.
-	srb2wad = malloc(strlen(srb2waddir)+1+8+1);
+	srb2wad = malloc(strlen(srb2waddir) + 1 + 8 + 1);
 	if (srb2wad == NULL)
 		I_Error("No more free memory to look in %s", srb2waddir);
 	else
@@ -1007,27 +1007,27 @@ static void IdentifyVersion(void)
 	// checking in D_SRB2Main
 
 	// Add the maps
-	D_AddFile(startupwadfiles, va(pandf,srb2waddir,"zones.pk3"));
+	D_AddFile(startupwadfiles, va(pandf, srb2waddir, "zones.pk3"));
 
 	// Add the players
-	D_AddFile(startupwadfiles, va(pandf,srb2waddir, "player.dta"));
+	D_AddFile(startupwadfiles, va(pandf, srb2waddir, "player.dta"));
 
 #ifdef USE_PATCH_DTA
 	// Add our crappy patches to fix our bugs
-	D_AddFile(startupwadfiles, va(pandf,srb2waddir,"patch.pk3"));
+	D_AddFile(startupwadfiles, va(pandf, srb2waddir, "patch.pk3"));
 #endif
 
-#if !defined (HAVE_SDL) || defined (HAVE_MIXER)
+#if !defined(HAVE_SDL) || defined(HAVE_MIXER)
 	{
-#define MUSICTEST(str) \
-		{\
-			const char *musicpath = va(pandf,srb2waddir,str);\
-			int ms = W_VerifyNMUSlumps(musicpath, false); \
-			if (ms == 1) \
-				D_AddFile(startupwadfiles, musicpath); \
-			else if (ms == 0) \
-				I_Error("File "str" has been modified with non-music/sound lumps"); \
-		}
+#define MUSICTEST(str)                                                            \
+	{                                                                             \
+		const char *musicpath = va(pandf, srb2waddir, str);                       \
+		int ms = W_VerifyNMUSlumps(musicpath, false);                             \
+		if (ms == 1)                                                              \
+			D_AddFile(startupwadfiles, musicpath);                                \
+		else if (ms == 0)                                                         \
+			I_Error("File " str " has been modified with non-music/sound lumps"); \
+	}
 
 		MUSICTEST("music.dta")
 		MUSICTEST("patch_music.pk3")
@@ -1039,7 +1039,7 @@ static void IdentifyVersion(void)
 }
 
 static void
-D_ConvertVersionNumbers (void)
+D_ConvertVersionNumbers(void)
 {
 	/* leave at defaults (0) under DEVELOP */
 #ifndef DEVELOP
@@ -1049,7 +1049,7 @@ D_ConvertVersionNumbers (void)
 	sscanf(SRB2VERSION, "%d.%d.%d", &major, &minor, &SUBVERSION);
 
 	/* this is stupid */
-	VERSION = ( major * 100 ) + minor;
+	VERSION = (major * 100) + minor;
 #endif
 }
 
@@ -1068,17 +1068,17 @@ void D_SRB2Main(void)
 
 	// Print GPL notice for our console users (Linux)
 	CONS_Printf(
-	"\n\nSonic Robo Blast 2\n"
-	"Copyright (C) 1998-2021 by Sonic Team Junior\n\n"
-	"This program comes with ABSOLUTELY NO WARRANTY.\n\n"
-	"This is free software, and you are welcome to redistribute it\n"
-	"and/or modify it under the terms of the GNU General Public License\n"
-	"as published by the Free Software Foundation; either version 2 of\n"
-	"the License, or (at your option) any later version.\n"
-	"See the 'LICENSE.txt' file for details.\n\n"
-	"Sonic the Hedgehog and related characters are trademarks of SEGA.\n"
-	"We do not claim ownership of SEGA's intellectual property used\n"
-	"in this program.\n\n");
+		"\n\nSonic Robo Blast 2\n"
+		"Copyright (C) 1998-2021 by Sonic Team Junior\n\n"
+		"This program comes with ABSOLUTELY NO WARRANTY.\n\n"
+		"This is free software, and you are welcome to redistribute it\n"
+		"and/or modify it under the terms of the GNU General Public License\n"
+		"as published by the Free Software Foundation; either version 2 of\n"
+		"the License, or (at your option) any later version.\n"
+		"See the 'LICENSE.txt' file for details.\n\n"
+		"Sonic the Hedgehog and related characters are trademarks of SEGA.\n"
+		"We do not claim ownership of SEGA's intellectual property used\n"
+		"in this program.\n\n");
 
 	// keep error messages until the final flush(stderr)
 #if !defined(NOTERMIOS)
@@ -1115,7 +1115,7 @@ void D_SRB2Main(void)
 #endif
 
 	// for dedicated server
-#if !defined (_WINDOWS) //already check in win_main.c
+#if !defined(_WINDOWS) //already check in win_main.c
 	dedicated = M_CheckParm("-dedicated") != 0;
 #endif
 
@@ -1123,19 +1123,19 @@ void D_SRB2Main(void)
 		CONS_Printf(M_GetText("Development mode ON.\n"));
 
 	// default savegame
-	strcpy(savegamename, SAVEGAMENAME"%u.ssg");
-	strcpy(liveeventbackup, "live"SAVEGAMENAME".bkp"); // intentionally not ending with .ssg
+	strcpy(savegamename, SAVEGAMENAME "%u.ssg");
+	strcpy(liveeventbackup, "live" SAVEGAMENAME ".bkp"); // intentionally not ending with .ssg
 
 	{
 		const char *userhome = D_Home(); //Alam: path to home
 
 		if (!userhome)
 		{
-#if ((defined (__unix__) && !defined (MSDOS)) || defined(__APPLE__) || defined (UNIXCOMMON)) && !defined (__CYGWIN__)
+#if ((defined(__unix__) && !defined(MSDOS)) || defined(__APPLE__) || defined(UNIXCOMMON)) && !defined(__CYGWIN__)
 			I_Error("Please set $HOME to your home directory\n");
 #else
 			if (dedicated)
-				snprintf(configfile, sizeof configfile, "d"CONFIGFILENAME);
+				snprintf(configfile, sizeof configfile, "d" CONFIGFILENAME);
 			else
 				snprintf(configfile, sizeof configfile, CONFIGFILENAME);
 #endif
@@ -1147,7 +1147,7 @@ void D_SRB2Main(void)
 			snprintf(srb2home, sizeof srb2home, "%s" PATHSEP DEFAULTDIR, userhome);
 			snprintf(downloaddir, sizeof downloaddir, "%s" PATHSEP "DOWNLOAD", srb2home);
 			if (dedicated)
-				snprintf(configfile, sizeof configfile, "%s" PATHSEP "d"CONFIGFILENAME, srb2home);
+				snprintf(configfile, sizeof configfile, "%s" PATHSEP "d" CONFIGFILENAME, srb2home);
 			else
 				snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, srb2home);
 
@@ -1156,11 +1156,11 @@ void D_SRB2Main(void)
 			strcatbf(liveeventbackup, srb2home, PATHSEP);
 
 			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", srb2home);
-#else // DEFAULTDIR
+#else  // DEFAULTDIR
 			snprintf(srb2home, sizeof srb2home, "%s", userhome);
 			snprintf(downloaddir, sizeof downloaddir, "%s", userhome);
 			if (dedicated)
-				snprintf(configfile, sizeof configfile, "%s" PATHSEP "d"CONFIGFILENAME, userhome);
+				snprintf(configfile, sizeof configfile, "%s" PATHSEP "d" CONFIGFILENAME, userhome);
 			else
 				snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, userhome);
 
@@ -1257,8 +1257,8 @@ void D_SRB2Main(void)
 #ifndef DEVELOP // md5s last updated 22/02/20 (ddmmyy)
 
 	// Check MD5s of autoloaded files
-	W_VerifyFileMD5(0, ASSET_HASH_SRB2_PK3); // srb2.pk3
-	W_VerifyFileMD5(1, ASSET_HASH_ZONES_PK3); // zones.pk3
+	W_VerifyFileMD5(0, ASSET_HASH_SRB2_PK3);   // srb2.pk3
+	W_VerifyFileMD5(1, ASSET_HASH_ZONES_PK3);  // zones.pk3
 	W_VerifyFileMD5(2, ASSET_HASH_PLAYER_DTA); // player.dta
 #ifdef USE_PATCH_DTA
 	W_VerifyFileMD5(3, ASSET_HASH_PATCH_PK3); // patch.pk3
@@ -1311,7 +1311,7 @@ void D_SRB2Main(void)
 
 	G_LoadGameData();
 
-#if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
+#if (defined(__unix__) && !defined(MSDOS)) || defined(UNIXCOMMON) || defined(HAVE_SDL)
 	VID_PrepareModeList(); // Regenerate Modelist according to cv_fullscreen
 #endif
 
@@ -1331,7 +1331,7 @@ void D_SRB2Main(void)
 	{
 		const char *word = M_GetNextParm();
 		pstartmap = G_FindMapByNameOrCode(word, 0);
-		if (! pstartmap)
+		if (!pstartmap)
 			I_Error("Cannot find a map remotely named '%s'\n", word);
 		else
 		{
@@ -1379,11 +1379,11 @@ void D_SRB2Main(void)
 				digital_disabled = true; // WARNING: DOS version initmusic in I_StartupSound
 		}
 	}
-	if (!( sound_disabled && digital_disabled
+	if (!(sound_disabled && digital_disabled
 #ifndef NO_MIDI
-				&& midi_disabled
+		  && midi_disabled
 #endif
-	 ))
+		  ))
 	{
 		CONS_Printf("S_InitSfxChannels(): Setting up sound channels.\n");
 		I_StartupSound();
@@ -1427,9 +1427,9 @@ void D_SRB2Main(void)
 
 	// user settings come before "+" parameters.
 	if (dedicated)
-		COM_ImmedExecute(va("exec \"%s"PATHSEP"adedserv.cfg\"\n", srb2home));
+		COM_ImmedExecute(va("exec \"%s" PATHSEP "adedserv.cfg\"\n", srb2home));
 	else
-		COM_ImmedExecute(va("exec \"%s"PATHSEP"autoexec.cfg\" -noerror\n", srb2home));
+		COM_ImmedExecute(va("exec \"%s" PATHSEP "autoexec.cfg\" -noerror\n", srb2home));
 
 	if (!autostart)
 		M_PushSpecialParameters(); // push all "+" parameters at the command buffer
@@ -1577,20 +1577,19 @@ const char *D_Home(void)
 		userhome = M_GetNextParm();
 	else
 	{
-#if !((defined (__unix__) && !defined (MSDOS)) || defined(__APPLE__) || defined (UNIXCOMMON)) && !defined (__APPLE__)
+#if !((defined(__unix__) && !defined(MSDOS)) || defined(__APPLE__) || defined(UNIXCOMMON)) && !defined(__APPLE__)
 		if (FIL_FileOK(CONFIGFILENAME))
 			usehome = false; // Let's NOT use home
 		else
 #endif
 			userhome = I_GetEnv("HOME"); //Alam: my new HOME for srb2
 	}
-#ifdef _WIN32 //Alam: only Win32 have APPDATA and USERPROFILE
+#ifdef _WIN32				  //Alam: only Win32 have APPDATA and USERPROFILE
 	if (!userhome && usehome) //Alam: Still not?
 	{
 		char *testhome = NULL;
 		testhome = I_GetEnv("APPDATA");
-		if (testhome != NULL
-			&& (FIL_FileOK(va("%s" PATHSEP "%s" PATHSEP CONFIGFILENAME, testhome, DEFAULTDIR))))
+		if (testhome != NULL && (FIL_FileOK(va("%s" PATHSEP "%s" PATHSEP CONFIGFILENAME, testhome, DEFAULTDIR))))
 		{
 			userhome = testhome;
 		}
@@ -1600,14 +1599,15 @@ const char *D_Home(void)
 	{
 		char *testhome = NULL;
 		testhome = I_GetEnv("USERPROFILE");
-		if (testhome != NULL
-			&& (FIL_FileOK(va("%s" PATHSEP "%s" PATHSEP CONFIGFILENAME, testhome, DEFAULTDIR))))
+		if (testhome != NULL && (FIL_FileOK(va("%s" PATHSEP "%s" PATHSEP CONFIGFILENAME, testhome, DEFAULTDIR))))
 		{
 			userhome = testhome;
 		}
 	}
-#endif// !__CYGWIN__
-#endif// _WIN32
-	if (usehome) return userhome;
-	else return NULL;
+#endif // !__CYGWIN__
+#endif // _WIN32
+	if (usehome)
+		return userhome;
+	else
+		return NULL;
 }

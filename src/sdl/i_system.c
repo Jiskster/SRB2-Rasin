@@ -105,7 +105,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #if (defined (__unix__) && !defined (_MSDOS)) || (defined (UNIXCOMMON) && !defined(__APPLE__))
 #include <errno.h>
 #include <sys/wait.h>
-#define NEWSIGNALHANDLER
+//#define NEWSIGNALHANDLER
 #endif
 
 #ifndef NOMUMBLE
@@ -2154,7 +2154,7 @@ static Uint64 timer_frequency;
 static double tic_frequency;
 static Uint64 tic_epoch;
 
-int8_t lastTimeFudge = -1;
+int8_t lastTimeFudge = 0;
 static double elapsed;
 
 tic_t I_GetTime(void)
@@ -2176,18 +2176,15 @@ tic_t I_GetTime(void)
 		if (!elapsed)
 			elapsed = now;
 
-		Uint64 frame = elapsed;
-
-		// frame = elapsed * NEWTICRATE / timer_frequency
-
 		if (cv_timefudge.value > lastTimeFudge)
 		{
-			frame--; // do not allow the same tic to play twice
+			elapsed--; // do not allow the same tic to play twice
 		}
 
-		elapsed = (double)(frame + cv_timefudge.value / 100);
-		// 100? what is this magic number? for tic_frequency? probably it's just to get a float number from 0 to 1 by dividing timefudge/100
+		elapsed = (double)(elapsed + cv_timefudge.value / 100);
+		// 100? probably it's just to get a float number from 0 to 1 by dividing timefudge/100
 		// this probably allows to move the time in slight steps
+		// knowing that this is a FP value, this makes sense.
 		// jitters happen when we are not "even" with timers within 0..1 (and also depending on latency)
 
 		lastTimeFudge = cv_timefudge.value;
@@ -2204,7 +2201,7 @@ tic_t I_GetTime(void)
 // returns time in 1/TICRATE second tics
 // tells how much time elapsed in OUR machine only(?)
 //
-UINT64 I_GetTimeUs(void) 
+precise_t I_GetTimeUs(void) 
 {
 	return (SDL_GetPerformanceCounter()/ tic_frequency - elapsed);
 	// return 0;

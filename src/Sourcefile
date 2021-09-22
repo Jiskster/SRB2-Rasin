@@ -43,6 +43,7 @@ p_maputl.c
 p_mobj.c
 p_polyobj.c
 p_saveg.c
+p_savenetrb.c
 p_setup.c
 p_sight.c
 p_spec.c
@@ -94,3 +95,4 @@ lua_taglib.c
 lua_polyobjlib.c
 lua_blockmaplib.c
 lua_hudlib.c
+

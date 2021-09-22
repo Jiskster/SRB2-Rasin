@@ -4002,7 +4002,11 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		V_SetPaletteLump("PLAYPAL");
 
 	// Invalidate simulation save states
-	InvalidateSavestates();
+	if (fromnetsave)
+	{
+		CONS_Alert(CONS_WARNING, "Flushing savestates due to netsave loading\n");
+		InvalidateSavestates();
+	}
 
 	// Initialize sector node list.
 	P_Initsecnode();

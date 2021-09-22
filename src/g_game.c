@@ -1160,6 +1160,8 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		return;
 	}
 
+
+
 	turnright = PLAYERINPUTDOWN(ssplayer, gc_turnright);
 	turnleft = PLAYERINPUTDOWN(ssplayer, gc_turnleft);
 
@@ -1585,7 +1587,13 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		// Fix offset angle for P2-controlled Tailsbot when P2's controls are set to non-Legacy
 		cmd->angleturn = (INT16)((localangle - *myangle) >> 16);
 
-	*myangle += (cmd->angleturn<<16);
+	//HACK
+	// //player angle correction because camera sucks
+	if (!(player->climbing) && (player->powers[pw_carry] != CR_MINECART) && canSimulate)
+		*myangle += (cmd->angleturn<<16) + player->mo->angle - *myangle;
+	else
+		*myangle += (cmd->angleturn<<16);
+
 
 	if (controlstyle == CS_LMAOGALOG) {
 		angle_t angle;
