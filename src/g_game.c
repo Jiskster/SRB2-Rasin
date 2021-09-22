@@ -1588,8 +1588,8 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		cmd->angleturn = (INT16)((localangle - *myangle) >> 16);
 
 	//HACK
-	// //player angle correction because camera sucks
-	if (!(player->climbing) && (player->powers[pw_carry] != CR_MINECART) && canSimulate)
+	//player angle correction because camera sucks
+	if (!(player->climbing) && (player->powers[pw_carry] != CR_MINECART) && canSimulate && (neededtic < gametic))
 		*myangle += (cmd->angleturn<<16) + player->mo->angle - *myangle;
 	else
 		*myangle += (cmd->angleturn<<16);
