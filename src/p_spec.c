@@ -7223,21 +7223,30 @@ void T_Scroll(scroll_t *s)
 		TAG_ITER_DECLARECOUNTER(0);
 
 		case sc_side: // scroll wall texture
-			side = sides + s->affectee;
-			side->textureoffset += dx;
-			side->rowoffset += dy;
+			if (!issimulation)
+			{
+				side = sides + s->affectee;
+				side->textureoffset += dx;
+				side->rowoffset += dy;
+			}
 			break;
 
 		case sc_floor: // scroll floor texture
-			sec = sectors + s->affectee;
-			sec->floor_xoffs += dx;
-			sec->floor_yoffs += dy;
+			if (!issimulation)
+			{
+				sec = sectors + s->affectee;
+				sec->floor_xoffs += dx;
+				sec->floor_yoffs += dy;
+			}
 			break;
 
 		case sc_ceiling: // scroll ceiling texture
-			sec = sectors + s->affectee;
-			sec->ceiling_xoffs += dx;
-			sec->ceiling_yoffs += dy;
+			if (!issimulation)
+			{
+				sec = sectors + s->affectee;
+				sec->ceiling_xoffs += dx;
+				sec->ceiling_yoffs += dy;
+			}
 			break;
 
 		case sc_carry:
