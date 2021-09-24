@@ -3588,17 +3588,17 @@ static void P_DoClimbing(player_t *player)
 	}
 
 #define CLIMBCONEMAX FixedAngle(90*FRACUNIT)
-	if (!demoplayback || P_ControlStyle(player) == CS_LMAOGALOG)
-	{
-		if (canSimulate && (finaltargetsimtic == simtic) || !canSimulate)
-		{
-			angle_t angdiff = P_GetLocalAngle(player) - player->mo->angle;
-			if (angdiff < ANGLE_180 && angdiff > CLIMBCONEMAX)
-				P_SetLocalAngle(player, player->mo->angle + CLIMBCONEMAX);
-			else if (angdiff > ANGLE_180 && angdiff < InvAngle(CLIMBCONEMAX))
-				P_SetLocalAngle(player, player->mo->angle - CLIMBCONEMAX);
-		}
-	}
+	// if (!demoplayback || P_ControlStyle(player) == CS_LMAOGALOG)
+	// {
+	// 	if (canSimulate && (finaltargetsimtic == simtic) || !canSimulate)
+	// 	{
+	// 		angle_t angdiff = P_GetLocalAngle(player) - player->mo->angle;
+	// 		if (angdiff < ANGLE_180 && angdiff > CLIMBCONEMAX)
+	// 			P_SetLocalAngle(player, player->mo->angle + CLIMBCONEMAX);
+	// 		else if (angdiff > ANGLE_180 && angdiff < InvAngle(CLIMBCONEMAX))
+	// 			P_SetLocalAngle(player, player->mo->angle - CLIMBCONEMAX);
+	// 	}
+	// }
 
 	if (player->climbing == 0)
 		P_SetPlayerMobjState(player->mo, S_PLAY_JUMP);
@@ -12930,14 +12930,17 @@ void P_SetPlayerAngle(player_t *player, angle_t angle)
 
 void P_SetLocalAngle(player_t *player, angle_t angle)
 {
-	INT16 delta = (INT16)((angle - P_GetLocalAngle(player)) >> 16);
+	if (!issimulation)
+	{
+		INT16 delta = (INT16)((angle - P_GetLocalAngle(player)) >> 16);
 
-	P_ForceLocalAngle(player, P_GetLocalAngle(player) + (angle_t)(delta << 16));
+		P_ForceLocalAngle(player, P_GetLocalAngle(player) + (angle_t)(delta << 16));
 
-	if (player == &players[consoleplayer])
-		ticcmd_oldangleturn[0] += delta;
-	else if (player == &players[secondarydisplayplayer])
-		ticcmd_oldangleturn[1] += delta;
+		if (player == &players[consoleplayer])
+			ticcmd_oldangleturn[0] += delta;
+		else if (player == &players[secondarydisplayplayer])
+			ticcmd_oldangleturn[1] += delta;
+	}
 }
 
 angle_t P_GetLocalAngle(player_t *player)
@@ -12952,7 +12955,7 @@ angle_t P_GetLocalAngle(player_t *player)
 
 void P_ForceLocalAngle(player_t *player, angle_t angle)
 {
-	if (canSimulate && (finaltargetsimtic == simtic) || !canSimulate)
+	if (!issimulation)
 	{
 		angle = angle & ~UINT16_MAX;
 

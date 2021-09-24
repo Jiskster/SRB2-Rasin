@@ -5368,15 +5368,15 @@ static void RunSimulations()
 	for (int i = 0; i < numToSimulate; i++)
 	{
 		// // control other players (just use their previous control for now)
-		// here you can do all sorts of player predictions. we don't do any because, hey, we just use what we know already
+		// here you can do all sorts of player predictions.
 		// 
-		// for (int j = 0; j < MAXPLAYERS; j++)
-		// {
-		// 	if (playeringame[j] && j != consoleplayer)
-		// 		//simtic+1 это для херни со smoothedTic
-		// 		//use Memcpy or G_CopyTiccmd for that
-		// 		netcmds[gametic % BACKUPTICS][j] = gameTicBuffer[(min(simtic + 1, gametic) + MAXSIMULATIONS) % MAXSIMULATIONS][j];
-		// }
+		for (int j = 0; j < MAXPLAYERS; j++)
+		{
+			if (playeringame[j] && j != consoleplayer)
+				//simtic+1 это для херни со smoothedTic
+				//use Memcpy or G_CopyTiccmd for that
+				netcmds[gametic % BACKUPTICS][j] = gameTicBuffer[(min(simtic + 1, gametic) + MAXSIMULATIONS) % MAXSIMULATIONS][j];
+		}
 
 		// control the local player
 		if (simtic + i < gametic) // game is smoothed, take tics from the _actual_ received state
