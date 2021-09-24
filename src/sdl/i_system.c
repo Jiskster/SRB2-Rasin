@@ -2151,11 +2151,11 @@ void I_StartupTimer(void)
 
 static Uint64 timer_frequency;
 
-static double tic_frequency;
+double tic_frequency;
 static Uint64 tic_epoch;
 
 int8_t lastTimeFudge = 0;
-static double elapsed;
+double elapsed;
 
 tic_t I_GetTime(void)
 {

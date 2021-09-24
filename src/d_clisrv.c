@@ -5044,7 +5044,7 @@ int recommendedSimulateTics = 0;
 int smoothingDelay;
 precise_t saveStateBenchmark = 0;
 precise_t loadStateBenchmark = 0;
-int netUpdateFudge; // our last net update fudge
+double netUpdateFudge; // our last net update fudge
 
 tic_t SavestatesClearedTic;
 
@@ -5076,6 +5076,10 @@ void TryRunTics(tic_t realtics, tic_t entertic)
 		if (mapchangepending)
 			D_MapChange(-1, 0, ultimatemode, false, 2, false, fromlevelselect); // finish the map change
 	}
+
+	//TODO: remove these 1000000s for 2.2.9/next
+	double frame = ((double)SDL_GetPerformanceCounter() / tic_frequency);
+	netUpdateFudge = (((double)SDL_GetPerformanceCounter() / tic_frequency) - frame); // record the timefudge where the net update typically occurs
 
 	NetUpdate();
 

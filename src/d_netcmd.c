@@ -671,41 +671,39 @@ void D_RegisterServerCommands(void)
 
 #include "i_net.h"
 
-extern int netUpdateFudge;
+extern double netUpdateFudge;
 void Command_Autotimefudge(void)
 {
-	UINT64 startTime = I_GetTimeUs();
-	static UINT64 packetTimeFudge[512];
+	// you can use SDL_GetPerformanceFrequency() instead of tic_frequency to get more precise timings
+	double startTime = (double)SDL_GetPerformanceCounter() / tic_frequency;
+	UINT8 packetTimeFudge[64];
 	int numReceivedPackets = 0;
-	int numSampleTics = 14;
+	const double numSampleTics = 10;
 	int i;
 
-	if (server)
+	if (server && netgame)
 	{
-		if (netgame)
-		{
-			CONS_Printf("Servers do not need a time fudge! Heck, why are you hosting with this exe anyway? You don't need to ;)\n");
-		}
+		CONS_Printf("Servers do not need a time fudge!\n");
 		return;
 	}
 
-	// New experimental version! Run a precise while loop that picks up packets instantly
-	while (I_GetTimeUs() - startTime < ((UINT64)numSampleTics * 1000000 / NEWTICRATE))
+	while ((abs((double)SDL_GetPerformanceCounter() / tic_frequency - startTime) < numSampleTics) || numReceivedPackets < 10)
 	{
+		double now = (double)SDL_GetPerformanceCounter() / tic_frequency;
 		I_NetGet();
-		if (doomcom->remotenode != -1 && I_GetTimeUs() - startTime > (unsigned long long)2*1000000/NEWTICRATE) // wait a couple frames before recording
+		if ((doomcom->remotenode != -1))
 		{
-			unsigned long long frame = I_GetTimeUs() * NEWTICRATE / 1000000;
-			packetTimeFudge[numReceivedPackets++] = (I_GetTimeUs() - frame * 1000000 / NEWTICRATE) * 100 * NEWTICRATE / 1000000
-				- netUpdateFudge; // gets the time fudge offset (0-100)
+			packetTimeFudge[numReceivedPackets] = 100 * (UINT8)(abs((SDL_GetPerformanceCounter() / tic_frequency - now) - netUpdateFudge)); // gets the time fudge offset (0-100)
+			numReceivedPackets++;
 		}
 	}
 
 	if (numReceivedPackets > 0)
 	{
-		int minOffset = 100, maxOffset = 0, averageOffset = 0;
-		int newTimeFudge;
-		int estimatedRange;
+		UINT8 minOffset = 100, maxOffset = 0, averageOffset = 0;
+		UINT8 newTimeFudge;
+		UINT8 estimatedRange;
+
 
 		for (i = 0; i < numReceivedPackets; i++)
 		{
@@ -729,8 +727,14 @@ void Command_Autotimefudge(void)
 		estimatedRange = maxOffset - minOffset;
 		averageOffset = (maxOffset + minOffset) / 2;
 
-		CONS_Printf("%i packets, min: %d max: %d avg: %d est. range: %d (mynetupdate: %i)\n", numReceivedPackets, minOffset, maxOffset, averageOffset,
+		CONS_Printf("%i packets received\n Timer fluctuations:\nmin: %d max: %d avg: %d est. range: %d (local timer update: %lf)\n", numReceivedPackets, minOffset, maxOffset, averageOffset,
 			estimatedRange, netUpdateFudge);
+
+		if (averageOffset <= 0)
+		{
+			CONS_Printf("Timers are OK, no time fudging required\n");
+			return;
+		}
 
 		newTimeFudge = (cv_timefudge.value + averageOffset + 50) % 100;
 		CONS_Printf("New time fudge: %i%%\n", newTimeFudge);
