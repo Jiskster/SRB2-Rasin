@@ -4936,6 +4936,8 @@ static inline void P_UnArchivePolyObj(polyobj_t *po)
 
 	id = READINT32(save_p);
 
+	po->angle = 0; //angle isn't in the original state because we store the absolute number 
+
 	angle = READANGLE(save_p);
 
 	x = READFIXED(save_p);
@@ -5813,6 +5815,8 @@ void P_SaveGameState(savestate_t* savestate)
 		mobj->mobjnum = i++;
 	}
 
+	//nothinkers aren't required for synching(?), so it's disabled for now
+	//it can be made as an option if the user wants to  
 	// UINT64 s;
 	// // including nothinkers...
 	// for (s = 0; s < numsectors; s++)
@@ -5832,7 +5836,8 @@ void P_SaveGameState(savestate_t* savestate)
 	P_NetArchivePlayers();
 	if (gamestate == GS_LEVEL)
 	{
-		P_NetArchiveWorld();
+		// P_NetArchiveWorld();
+		P_LocalArchiveWorld();
 		P_ArchivePolyObjects();
 		P_NetArchiveThinkers();
 		P_NetArchiveSpecials();
@@ -5877,7 +5882,8 @@ boolean P_LoadGameState(const savestate_t* savestate)
 	P_NetUnArchivePlayers();
 	if (gamestate == GS_LEVEL)
 	{
-		P_NetUnArchiveWorld();
+		// P_NetUnArchiveWorld();
+		P_LocalUnArchiveWorld();
 		P_UnArchivePolyObjects();
 		P_NetUnArchiveThinkers();
 		P_NetUnArchiveSpecials();
@@ -5886,7 +5892,9 @@ boolean P_LoadGameState(const savestate_t* savestate)
 		P_RelinkPointers();
 		P_FinishMobjs();
 	}
+	con_muted = true;
 	LUA_UnArchive();
+	con_muted = false;
 
 	// This is stupid and hacky, but maybe it'll work!
 	P_SetRandSeed(P_GetInitSeed());
@@ -5898,7 +5906,7 @@ boolean P_LoadGameState(const savestate_t* savestate)
 	// This is done in P_NetUnArchiveSpecials now.
 	P_UnArchiveLuabanksAndConsistency();
 	loadStateBenchmark = I_GetPreciseTime() - loadStateBenchmark;
-	save_p = NULL; //invalidate it
+	// save_p = NULL; //invalidate it//why??
 	return 0;
 }
 
