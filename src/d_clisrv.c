@@ -141,8 +141,6 @@ ticcmd_t localTicBuffer[MAXSIMULATIONS];			 //own recordings during simulations
 ticcmd_t gameTicBuffer2[MAXSIMULATIONS][MAXPLAYERS]; //what the fuck am I doing, why did I create a second buffer
 
 boolean issimulation = false;
-boolean rewindingWow = false;
-int rewindingTarget = 0;
 uint8_t simInaccuracy = 1; //depends on cv.siminaccuracy. if estimatedRTT < cv.siminaccuracy, then it equals estimatedRTT
 
 
@@ -4607,7 +4605,7 @@ static void CL_SendClientCmd(void)
 	else if (gamestate != GS_NULL && (addedtogame || dedicated))
 	{
 		ticcmd_t adjustedCmd = localcmds;
-		AdjustSimulatedTiccmdInputs(&adjustedCmd); // adjust ticcmds for simulations
+		AdjustSimulatedTiccmdInputs(&adjustedCmd);
 
 		G_MoveTiccmd(&netbuffer->u.clientpak.cmd, &adjustedCmd, 1);
 		netbuffer->u.clientpak.consistancy = SHORT(consistancy[gametic%BACKUPTICS]);
@@ -5080,6 +5078,9 @@ void TryRunTics(tic_t realtics, tic_t entertic)
 	double frame = ((double)SDL_GetPerformanceCounter() / tic_frequency);
 	netUpdateFudge = (((double)SDL_GetPerformanceCounter() / tic_frequency) - frame); // record the timefudge where the net update typically occurs
 
+	//TODO SPLITSCREEN PLAYER
+	ticcmd_t latestLocalCmd = localcmds;
+
 	NetUpdate();
 
 	if (demoplayback)
@@ -5259,11 +5260,24 @@ void TryRunTics(tic_t realtics, tic_t entertic)
 		MakeNetDebugString();
 
 	}
-	//The network/game is laggy, let's simulate one tic further and use previous controls
+	// The network/game is laggy, let's simulate one tic further and use previous controls
 	else
 		if (canSimulate && !cl_redownloadinggamestate)
 		{
+			// collect net condition data based on encoded tics, it's needed for calculating correct netcmds
+			DetermineNetConditions();
+			for (int j = 0; j < MAXPLAYERS; j++)
+			{
+				if (playeringame[j] && j != consoleplayer)
+					netcmds[gametic % BACKUPTICS][j] = gameTicBuffer[(min(simtic + 1, gametic) + MAXSIMULATIONS) % MAXSIMULATIONS][j];
+			}
+			// localcmds = latestLocalCmd;
+			issimulation = true;
+			con_muted = true;
 			G_Ticker(true); //tic one tic further as usual
+			issimulation = false;
+			con_muted = false;
+			// latestLocalCmd = localcmds;
 			// we're gonna need more debugs...
 			MakeNetDebugString();
 		}
@@ -5317,21 +5331,6 @@ float netplus_median(int n, int x[])
 {
 	int temp;
 	int i, j;
-	// // the following two loops sort the array x in ascending order
-	// for (i = 0; i < n - 1; i++)
-	// {
-	// 	for (j = i + 1; j < n; j++)
-	// 	{
-	// 		if (x[j] < x[i])
-	// 		{
-	// 			// swap elements
-	// 			temp = x[i];
-	// 			x[i] = x[j];
-	// 			x[j] = temp;
-	// 		}
-	// 	}
-	// }
-
 	if (n % 2 == 0)
 	{
 		// if there is an even number of elements, return mean of the two elements in the middle
@@ -5355,75 +5354,34 @@ int DetermineSimulationAmount()
 		for (int j = 1; j < 3; j++)
 		{
 			if (CompareTiccmd(&gameTicBuffer[gametic % MAXSIMULATIONS][consoleplayer], &gameTicBuffer[(gametic - j) % MAXSIMULATIONS][consoleplayer]))
-			{
 				tastyFudge++;
-				// CONS_Alert(CONS_WARNING, "Duplicate tics found\n");
-			}
 			else
 				break;
 		}
 	}
 
 	int numDesiredSimulateTics = min(recommendedSimulateTics, cv_simulatetics.value);
-	// it always equals gametic+estimatedRTT-tastyFudge
+	// it 99% of the time always equals gametic+estimatedRTT-tastyFudge
 	int nextTargetSimTic = min(min(gametic + estimatedRTT - tastyFudge, gametic + numDesiredSimulateTics), simtic + MAXSIMULATIONS);
 
 	if ((nextTargetSimTic >= 0) && (liveTic % simInaccuracy == 0))
 		targetsimtic = nextTargetSimTic;
 
 	numToSimulateHistory[liveTic % MAXSIMULATIONS] = targetsimtic - simtic;
-	// CONS_Printf("initial array:\n");
 	for (int i = 0; i < MAXSIMULATIONS; i++)
-	{
-		// CONS_Printf("%i\n", numToSimulateHistory[i]);
-		if (numToSimulateHistory[i] == 0)
-		{
-			return numToSimulateHistory[liveTic % MAXSIMULATIONS];
-		}
-		// else
-		// 	numToSimulate = ((numToSimulate < numToSimulateHistory[i]) ? numToSimulateHistory[i] : numToSimulate);
-	}
+	if (numToSimulateHistory[i] == 0)
+		return numToSimulateHistory[liveTic % MAXSIMULATIONS];
 
-	// uint8_t numToSimulate = 0;
 
 	int numToSimulateHistorySorted[MAXSIMULATIONS] = {0};
 	M_Memcpy(numToSimulateHistorySorted, numToSimulateHistory, MAXSIMULATIONS * sizeof(int));
-	// int numToSimulateHistorySorted[] = Z_Malloc(MAXSIMULATIONS * sizeof(int), PU_STATIC, NULL);
-	// M_Memcpy(numToSimulateHistorySorted, numToSimulateHistory, sizeof(numToSimulateHistory));
-
 	//quicksort
 	rathbhupendra_quicksort(numToSimulateHistorySorted, 0, MAXSIMULATIONS - 1);
 	//find the median
 	float numSimsMedian = netplus_median(MAXSIMULATIONS-1, numToSimulateHistorySorted);
-	// CONS_Printf("numSimsMedian: %f, %i\n", numSimsMedian, (int)numSimsMedian);
 	if (numSimsMedian <= 1)
-	{
-		// free(numToSimulateHistorySorted);
 		return 1;
-	}
-	//take the min of two numbers
-	// CONS_Printf("sorted array: ");
-	// int result;
-	// for (int i = 0; i < MAXSIMULATIONS; i++)
-	// {
-	// 	CONS_Printf("%i, ", numToSimulateHistorySorted[i]);
-	// 	if (!result)
-	// 		if (numToSimulateHistorySorted[i] >= (int)numSimsMedian)
-	// 			continue;
-	// 		else
-	// 		{
-	// 			result = numToSimulateHistorySorted[i-1];
-	// 			// return result;
-	// 		}
-	// }
-	// CONS_Printf("\nFinal ESTRTT:= %i\n", numSimsMedian);
 	return (int)numSimsMedian;
-	// CONS_Printf("\n");
-	CONS_Alert(CONS_ERROR, "Cannot determine the amount of simuations required, report this message to @JF049 if you see this.\n");
-	// free(numToSimulateHistorySorted);
-	return targetsimtic - simtic;
-	
-	// return numToSimulate;
 }
 
 
@@ -5510,7 +5468,6 @@ static void RunSimulations()
 	{
 		// // control other players (just use their previous control for now)
 		// here you can do all sorts of player predictions.
-		//
 		for (int j = 0; j < MAXPLAYERS; j++)
 		{
 			if (playeringame[j] && j != consoleplayer)
@@ -5806,7 +5763,7 @@ void MakeNetDebugString()
 	// sprintf(&netDebugText[strlen(netDebugText)], "\nLive: %d", liveTic);
 	sprintf(&netDebugText[strlen(netDebugText)], "\nTime save/load: %.4f/%.4f", (float)(I_PreciseToMicros(saveStateBenchmark)) / 1000, (float)(I_PreciseToMicros(loadStateBenchmark)) / 1000);
 	sprintf(&netDebugText[strlen(netDebugText)], "\nSim time: %.4f", (float)(I_PreciseToMicros(simEndTime - simStartTime)) / 1000);
-	sprintf(&netDebugText[strlen(netDebugText)], "\nTotal +ms: %.4f", (float)(I_PreciseToMicros(simEndTime - simStartTime + saveStateBenchmark + loadStateBenchmark) / 1000));
+	sprintf(&netDebugText[strlen(netDebugText)], "\nTotal +ms: %.4f", (float)(I_PreciseToMicros(simEndTime - simStartTime + saveStateBenchmark + loadStateBenchmark))/1000);
 	// sprintf(&netDebugText[strlen(netDebugText)], "\nseed: %d", P_GetRandSeed());
 	// sprintf(&netDebugText[strlen(netDebugText)], "\nTimeFudge: %d%%", cv_timefudge.value);
 	lastSim = simtic;
