@@ -1621,7 +1621,7 @@ static void CL_ReloadReceivedSavegame(void)
 	if (simtic > gametic && !canSimulate)
 	{
 		simtic = gametic;
-		CONS_Printf("Not simulating, clearing local savestates...\n");
+		DEBFILE("Not simulating, clearing local savestates...\n");
 		// we don't load our local gamestate because we are gonna load the server's one
 		InvalidateSavestates();
 	}
