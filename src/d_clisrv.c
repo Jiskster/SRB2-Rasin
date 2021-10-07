@@ -5134,10 +5134,12 @@ void TryRunTics(tic_t realtics, tic_t entertic)
 			// it happened once with "battleroyale" lua mod
 		}
 		else
-			CONS_Printf("Game state buffer is invalid! (simtic %d gametic %d)\n", simtic, gametic);
+			// CONS_Printf("Game state buffer is invalid! (simtic %d gametic %d)\n", simtic, gametic);
+			DEBFILE(va("NETPLUS: Game state buffer is invalid! (simtic %d gametic %d)\n", simtic, gametic));
 
 		simtic = gametic;
-		CONS_Printf("Not simulating, clearing savestates...\n");
+		// CONS_Printf("Not simulating, clearing savestates...\n");
+		DEBFILE("NETPLUS: Not simulating, clearing savestates...\n");
 		InvalidateSavestates();
 	}
 
@@ -5191,10 +5193,12 @@ void TryRunTics(tic_t realtics, tic_t entertic)
 				{
 					P_LoadGameState(&gameStateBuffer[gametic % MAXLOCALSAVESTATES]);
 					if (Consistancy() != consistancy[gametic % BACKUPTICS])
-						CONS_Alert(CONS_WARNING, "Saved state at %d isn't consistent with recorded checksum\n", gametic);
+						// CONS_Alert(CONS_WARNING, "Saved state at %d isn't consistent with recorded checksum\n", gametic);
+						DEBFILE(va("NETPLUS: Saved state at %d isn't consistent with recorded checksum\n", gametic));
 				}
 				else if (simtic != gametic && !gameStateBufferIsValid[gametic % MAXLOCALSAVESTATES])
-					CONS_Alert(CONS_WARNING, "Game state buffer is inaccessible but a simulation happened\n");
+					// CONS_Alert(CONS_WARNING, "Game state buffer is inaccessible but a simulation happened\n");
+					DEBFILE("NETPLUS: Game state buffer is inaccessible but a simulation happened\n");
 
 				// run the count * tics
 				while (neededtic > gametic)
@@ -5391,7 +5395,8 @@ static void RunSimulations()
 {
 	if (!gameStateBufferIsValid[gametic % MAXLOCALSAVESTATES])
 	{
-		CONS_Alert(CONS_WARNING, "Can't simulate, save on %d is invalid!\n", gametic);
+		// CONS_Alert(CONS_WARNING, "Can't simulate, save on %d is invalid!\n", gametic);
+		DEBFILE(va("NETPLUS: Can't simulate, save on %d is invalid!\n", gametic));
 		return; // do not simulate if we cannot guarantee a recovery
 	}
 
@@ -5622,7 +5627,8 @@ static void RunSimulations()
 void InvalidateSavestates()
 {
 	if (simtic > gametic)
-		CONS_Printf("Warning: Savestates were invalidated during a simulation!!\n");
+		DEBFILE("NETPLUS: Savestates were invalidated during a simulation\n");
+		// CONS_Printf("Warning: Savestates were invalidated during a simulation!!\n");
 
 	for (int i = 0; i < MAXLOCALSAVESTATES; i++)
 	{

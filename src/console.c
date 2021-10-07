@@ -1335,7 +1335,6 @@ static void CON_Print(char *msg)
 	INT32 controlchars = 0; // for color changing
 	char color = '\x80';  // keep color across lines
 
-	//TODO: also mute the console in terminal/command line
 	if (msg == NULL || con_muted)
 		return;
 
@@ -1474,6 +1473,10 @@ void CONS_Printf(const char *fmt, ...)
 
 	// echo console prints to log file
 	DEBFILE(txt);
+
+	//also mute the console in terminal/command line AND file, except for DEBFILE above
+	if (con_muted)
+		return;
 
 	// write message in con text buffer
 	if (con_started)
