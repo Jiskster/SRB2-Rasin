@@ -5079,7 +5079,7 @@ void TryRunTics(tic_t realtics, tic_t entertic)
 	netUpdateFudge = (((double)SDL_GetPerformanceCounter() / tic_frequency) - frame); // record the timefudge where the net update typically occurs
 
 	//TODO SPLITSCREEN PLAYER
-	ticcmd_t latestLocalCmd = localcmds;
+	// ticcmd_t latestLocalCmd = localcmds;
 
 	NetUpdate();
 

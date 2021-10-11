@@ -5774,8 +5774,8 @@ static inline boolean P_UnArchiveLuabanksAndConsistency(void)
 
 void P_GameStateFreeMemory(savestate_t* savestate)
 {
-	if (gamestate != GS_LEVEL)
-		Z_Free(savestate->buffer);
+	// if (gamestate != GS_LEVEL)
+	Z_Free(savestate->buffer);
 	savestate->buffer = NULL; //a hacky way to invalidate the memory
 }
 
@@ -5867,7 +5867,7 @@ boolean P_LoadGameState(const savestate_t* savestate)
 	if (savedGameMap != gamemap)
 	{
 		// savestates do not work cross-level
-		save_p = NULL; //invalidate it
+		// save_p = NULL; //invalidate it //FUCK
 		return false;
 	}
 
