@@ -5078,9 +5078,6 @@ void TryRunTics(tic_t realtics, tic_t entertic)
 	double frame = ((double)SDL_GetPerformanceCounter() / tic_frequency);
 	netUpdateFudge = (((double)SDL_GetPerformanceCounter() / tic_frequency) - frame); // record the timefudge where the net update typically occurs
 
-	//TODO SPLITSCREEN PLAYER
-	// ticcmd_t latestLocalCmd = localcmds;
-
 	NetUpdate();
 
 	if (demoplayback)
@@ -5164,6 +5161,8 @@ void TryRunTics(tic_t realtics, tic_t entertic)
 		//localcmds are being calculated in NetUpdate()->Local_Maketic() function
 		localTicBuffer[(liveTic - i) % MAXSIMULATIONS] = localcmds;
 	}
+	//TODO SPLITSCREEN PLAYER
+	ticcmd_t latestLocalCmd = localcmds;
 
 
 	// Run the real game after dealing with enough simulations or if we don't have any.
@@ -5219,8 +5218,6 @@ void TryRunTics(tic_t realtics, tic_t entertic)
 
 					targetsimtic = gametic + 1;
 
-					DEBFILE(va("============ Running REAL tic %d (local %d)\n", gametic, localgametic));
-
 					G_Ticker((gametic % NEWTICRATERATIO) == 0);
 					ExtraDataTicker();
 					gametic++;
@@ -5270,18 +5267,24 @@ void TryRunTics(tic_t realtics, tic_t entertic)
 		{
 			// collect net condition data based on encoded tics, it's needed for calculating correct netcmds
 			DetermineNetConditions();
+			ticcmd_t temp;
 			for (int j = 0; j < MAXPLAYERS; j++)
 			{
-				if (playeringame[j] && j != consoleplayer)
+				if (playeringame[j] && j != consoleplayer && j != secondarydisplayplayer)
 					netcmds[gametic % BACKUPTICS][j] = gameTicBuffer[(min(simtic + 1, gametic) + MAXSIMULATIONS) % MAXSIMULATIONS][j];
+				else
+				{
+					temp = netcmds[gametic % BACKUPTICS][consoleplayer];
+					netcmds[gametic % BACKUPTICS][consoleplayer] = localcmds;
+				}
 			}
-			// localcmds = latestLocalCmd;
+			DEBFILE(va("============ Running SIMMISS tic %d (local %d)\n", gametic, localgametic));
 			issimulation = true;
 			con_muted = true;
 			G_Ticker(true); //tic one tic further as usual
+			netcmds[gametic % BACKUPTICS][consoleplayer] = temp;
 			issimulation = false;
 			con_muted = false;
-			// latestLocalCmd = localcmds;
 			// we're gonna need more debugs...
 			MakeNetDebugString();
 		}
@@ -5492,7 +5495,8 @@ static void RunSimulations()
 		}
 		else
 			netcmds[gametic % BACKUPTICS][consoleplayer] = localcmds; //NO
-
+		
+		DEBFILE(va("============ Running SIM tic %d (local %d) (sim %d)\n", gametic, localgametic, simtic));
 		G_Ticker(true); // tic a bunch of times lol see what happens lolol
 		simtic++;
 
@@ -5725,6 +5729,11 @@ void DetermineNetConditions()
 void MakeNetDebugString()
 {
 	netDebugText[0] = 0;
+	Net_GetNetStat();
+	sprintf(&netDebugText[strlen(netDebugText)], "RX: %d b/s\n", getbps);
+	sprintf(&netDebugText[strlen(netDebugText)], "TX: %d b/s\n", sendbps);
+	sprintf(&netDebugText[strlen(netDebugText)], "RX_ACK_Miss %.2f%%\n", gamelostpercent);
+	sprintf(&netDebugText[strlen(netDebugText)], "TX_ACK_Miss %.2f%%\n", lostpercent);
 
 	for (int i = min(maxRTT + 4, 16); i >= 0; i--)
 	{

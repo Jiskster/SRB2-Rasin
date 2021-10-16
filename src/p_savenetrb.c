@@ -4675,13 +4675,18 @@ static void P_NetUnArchiveThinkers(void)
 			if (currentthinker->function.acp1 == (actionf_p1)P_MobjThinker)
 				P_RemoveSavegameMobj((mobj_t *)currentthinker, false); // item isn't saved, don't remove it
 			else
+			{
+				// remove it manually, bye!
+				currentthinker->prev->next = currentthinker->next;
+				currentthinker->next->prev = currentthinker->prev;
 				Z_Free(currentthinker);
+			}
 		}
 	}
 
 	// we don't want the removed mobjs to come back
 	iquetail = iquehead = 0;
-	P_InitThinkers();
+	// P_InitThinkers();
 
 	// clear sector thinker pointers so they don't point to non-existant thinkers for all of eternity
 	for (i = 0; i < numsectors; i++)
@@ -4936,7 +4941,7 @@ static inline void P_UnArchivePolyObj(polyobj_t *po)
 
 	id = READINT32(save_p);
 
-	po->angle = 0; //angle isn't in the original state because we store the absolute number 
+	po->angle = 0; //angle isn't in the original state because we store the absolute number
 
 	angle = READANGLE(save_p);
 
@@ -5684,7 +5689,7 @@ static inline boolean P_UnArchiveLuabanksAndConsistency(void)
 // 	// assign mobj nums for pointer relinking
 // 	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 // 	{
-// 		if ((th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed) || (th->function.acp1 == (actionf_p1)P_NullPrecipThinker)) 
+// 		if ((th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed) || (th->function.acp1 == (actionf_p1)P_NullPrecipThinker))
 // 			continue;
 
 // 		mobj = (mobj_t *)th;
@@ -5857,7 +5862,8 @@ boolean P_LoadGameState(const savestate_t* savestate)
 	loadStateBenchmark = I_GetPreciseTime();
 	if (savestate->buffer == NULL)
 	{
-		CONS_Alert(CONS_ERROR, "Hell, we are going to load the invalid savestate!!!");
+		loadStateBenchmark = I_GetPreciseTime() - loadStateBenchmark;
+		return false;
 	}
 
 	save_p = ((unsigned char*)savestate->buffer);
@@ -5868,6 +5874,7 @@ boolean P_LoadGameState(const savestate_t* savestate)
 	{
 		// savestates do not work cross-level
 		// save_p = NULL; //invalidate it //FUCK
+		loadStateBenchmark = I_GetPreciseTime() - loadStateBenchmark;
 		return false;
 	}
 
@@ -6014,7 +6021,7 @@ boolean P_LoadGameState(const savestate_t* savestate)
 // 	// LUA_LocalUnArchive();
 // 	// This is stupid and hacky _squared_, but it's in the net load code and it says it might work, so I guess it might work!
 // 	P_SetRandSeed(P_GetInitSeed());
-	
+
 // 	P_UnArchiveLuabanksAndConsistency();
 // 	loadStateBenchmark = I_GetTimeUs() - time;
 
