@@ -4688,6 +4688,10 @@ static void P_NetUnArchiveThinkers(void)
 	iquetail = iquehead = 0;
 	// P_InitThinkers();
 
+	// clear flags (necessary for level-preserving loads)
+	redflag = NULL;
+	blueflag = NULL;
+
 	// clear sector thinker pointers so they don't point to non-existant thinkers for all of eternity
 	for (i = 0; i < numsectors; i++)
 	{
