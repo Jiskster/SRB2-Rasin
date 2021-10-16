@@ -5240,8 +5240,8 @@ void TryRunTics(tic_t realtics, tic_t entertic)
 							gameTicBuffer[gametic % MAXSIMULATIONS][i] = netcmds[(gametic - 1) % BACKUPTICS][i];
 					}
 					// Leave a certain amount of tics present in the net buffer as long as we've ran at least one tic this frame.
-					if (client && gamestate == GS_LEVEL && leveltime > 3 && neededtic <= gametic + cv_netticbuffer.value)
-						if (!canSimulate) //do not use the vanilla netbuffer or simulations will be doubled/tripled/so on
+					if (!canSimulate) //do not use the vanilla netbuffer or simulations will be doubled/tripled/so on
+						if (client && gamestate == GS_LEVEL && leveltime > 3 && neededtic <= gametic + cv_netticbuffer.value)
 							break;
 				}
 			}
