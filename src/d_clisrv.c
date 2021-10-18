@@ -5262,8 +5262,9 @@ void TryRunTics(tic_t realtics, tic_t entertic)
 
 	}
 	// The network/game is laggy, let's simulate one tic further and use previous controls
+	// hopefully the server won't miss our input 
 	else
-		if (canSimulate && !cl_redownloadinggamestate)
+		if (canSimulate && !cl_redownloadinggamestate && cv_simmisstics.value == 1)
 		{
 			// collect net condition data based on encoded tics, it's needed for calculating correct netcmds
 			DetermineNetConditions();
@@ -5388,6 +5389,8 @@ int DetermineSimulationAmount()
 	float numSimsMedian = netplus_median(MAXSIMULATIONS-1, numToSimulateHistorySorted);
 	if (numSimsMedian <= 1)
 		return 1;
+	if (numSimsMedian > numDesiredSimulateTics)
+		return numDesiredSimulateTics;
 	return (int)numSimsMedian;
 }
 
