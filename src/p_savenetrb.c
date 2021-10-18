@@ -5451,7 +5451,7 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	// if (!P_LoadLevel(true, reloading))
 	// 	return false;
 
-	if ((!reloading || (gamemap != oldMap)) && !P_LoadLevel(false, reloading))
+	if ((!reloading || (gamemap != oldMap)))
 		return false;
 
 	// get the time
@@ -5800,7 +5800,7 @@ void P_SaveGameState(savestate_t* savestate)
 
     if (savestate->buffer == NULL)
 	{
-		savestate->buffer = Z_Malloc(10 * 1024 * 1024, PU_LEVEL, NULL); //ten megabytes?
+		savestate->buffer = Z_Malloc(10 * 1024 * 1024, PU_STATIC, NULL); //ten megabytes?
 	}
 
     save_p = savestate->buffer;

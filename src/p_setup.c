@@ -3980,8 +3980,8 @@ static void P_InitGametype(void)
 boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 {
 	//prevent loading a level when in a simulation
-	if (issimulation)
-		return true;
+	// if (issimulation)
+	// 	return true;
 
 	// use gamemap to get map number.
 	// 99% of the things already did, so.
@@ -4154,6 +4154,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	Patch_FreeTag(PU_PATCH_LOWPRIORITY);
 	Patch_FreeTag(PU_PATCH_ROTATED);
 	Z_FreeTags(PU_LEVEL, PU_PURGELEVEL - 1);
+	InvalidateSavestates();
 
 	P_InitThinkers();
 	P_InitCachedActions();
