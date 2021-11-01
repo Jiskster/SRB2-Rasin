@@ -106,9 +106,9 @@ static void TimeFudge_OnChange(void);
 void Command_Autotimefudge(void);
 static void AutoUpdateTimeFudge_OnChange(void);
 
-// #ifdef NETGAME_DEVMODE
+#ifdef NETGAME_DEVMODE
 static void Fishcake_OnChange(void);
-// #endif
+#endif
 
 static void Command_Playdemo_f(void);
 static void Command_Timedemo_f(void);
@@ -203,9 +203,9 @@ static CV_PossibleValue_t pause_cons_t[] = {{0, "Server"}, {1, "All"}, {0, NULL}
 
 consvar_t cv_showinputjoy = CVAR_INIT ("showinputjoy", "Off", 0, CV_OnOff, NULL);
 
-// #ifdef NETGAME_DEVMODE
+#ifdef NETGAME_DEVMODE
 static consvar_t cv_fishcake = CVAR_INIT ("fishcake", "Off", CV_CALL|CV_NOSHOWHELP|CV_RESTRICT, CV_OnOff, Fishcake_OnChange);
-// #endif
+#endif
 static consvar_t cv_dummyconsvar = CVAR_INIT ("dummyconsvar", "Off", CV_CALL|CV_NOSHOWHELP, CV_OnOff, DummyConsvar_OnChange);
 
 consvar_t cv_restrictskinchange = CVAR_INIT ("restrictskinchange", "Yes", CV_SAVE|CV_NETVAR|CV_CHEAT, CV_YesNo, NULL);
@@ -387,7 +387,7 @@ consvar_t cv_simmisstics = { "simmisstics", "Yes", 0, CV_YesNo, NULL, 0, NULL, N
 consvar_t cv_jittersmoothing = { "jittersmoothing", "Yes", 0, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL };
 
 static CV_PossibleValue_t simulateculldistance_cons_t[] = { {0, "MIN"}, {10000, "MAX"}, {0, NULL} };
-consvar_t cv_simulateculldistance = { "simcull", "MIN", 0, simulateculldistance_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_simulateculldistance = { "simcull", "2", 0, simulateculldistance_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
 
 static CV_PossibleValue_t siminaccuracy_cons_t[] = { {1, "MIN"}, {10, "MAX"}, {0, NULL} };
 consvar_t cv_siminaccuracy = { "siminaccuracy", "MIN", 0, siminaccuracy_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
@@ -846,9 +846,9 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_netticbuffer);
 	CV_RegisterVar(&cv_netsimstat);
 
-// #ifdef NETGAME_DEVMODE
+#ifdef NETGAME_DEVMODE
 	CV_RegisterVar(&cv_fishcake);
-// #endif
+#endif
 
 	// HUD
 	CV_RegisterVar(&cv_timetic);
@@ -4473,7 +4473,7 @@ void Command_Retry_f(void)
 	}
 }
 
-// #ifdef NETGAME_DEVMODE
+#ifdef NETGAME_DEVMODE
 // Allow the use of devmode in netgames.
 static void Fishcake_OnChange(void)
 {
@@ -4488,7 +4488,7 @@ static void Fishcake_OnChange(void)
 	else if (cv_debug != cv_fishcake.value)
 		CV_SetValue(&cv_fishcake, cv_debug);
 }
-// #endif
+#endif
 
 /** Reports to the console whether or not the game has been modified.
   *

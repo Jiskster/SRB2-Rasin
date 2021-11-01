@@ -37,6 +37,8 @@
 #include "doomstat.h"
 #include "g_state.h"
 
+#include "hashtable.h"
+
 lua_State *gL = NULL;
 
 // List of internal libraries to load from SRB2
@@ -1655,17 +1657,46 @@ void LUA_UnArchive(void)
 		UnArchiveExtVars(&players[i]);
 	}
 
-	do {
-		mobjnum = READUINT32(save_p); // read a mobjnum
-		for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
+	mobjnum = READUINT32(save_p); // read a mobjnum
+	while(mobjnum != UINT32_MAX) // repeat until end of mobjs marker.
+	{
+		th = mobjnum_ht_linkedList_Find(mobjnum);
+		if (th && ((mobj_t *)th)->mobjnum == mobjnum)
 		{
-			if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
-				continue;
-			if (((mobj_t *)th)->mobjnum != mobjnum) // find matching mobj
-				continue;
-			UnArchiveExtVars(th); // apply variables
+			// hashHits++;
+			UnArchiveExtVars(th);
 		}
-	} while(mobjnum != UINT32_MAX); // repeat until end of mobjs marker.
+		else
+		{
+			// hashmiss++;
+			
+			for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
+			{
+				if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
+					continue;
+				if (((mobj_t *)th)->mobjnum != mobjnum) // find matching mobj
+					continue;
+				UnArchiveExtVars(th); // apply variables
+			}
+		}
+		mobjnum = READUINT32(save_p); // read a mobjnum
+	} 
+	
+	// mobjnum = READUINT32(save_p);
+	// while(mobjnum != UINT32_MAX) // repeat until end of mobjs marker.
+	// {
+	// 	{
+	// 		for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
+	// 		{
+	// 			if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
+	// 				continue;
+	// 			if (((mobj_t *)th)->mobjnum != mobjnum) // find matching mobj
+	// 				continue;
+	// 			UnArchiveExtVars(th); // apply variables
+	// 		}
+	// 	}
+	// 	mobjnum = READUINT32(save_p); // read a mobjnum
+	// }
 
 	LUAh_NetArchiveHook(NetUnArchive); // call the NetArchive hook in unarchive mode
 	UnArchiveTables();

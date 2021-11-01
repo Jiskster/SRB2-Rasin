@@ -39,10 +39,7 @@
 #include "p_setup.h"
 #include "p_slopes.h"
 #include "console.h"
-
-
-
-
+#include "hashtable.h"
 
 // Block UINT32s to attempt to ensure that the correct data is
 // being preserved
@@ -68,6 +65,27 @@ typedef enum
 	FOLLOW     = 0x40,
 	DRONE      = 0x80,
 } player_saveflags;
+
+mobj_t *P_FindNewPosition_Hashtable(UINT32 oldposition)
+{
+	thinker_t *th;
+	mobj_t *mobj;
+	th = mobjnum_ht_linkedList_Find(oldposition);
+	if (th && ((mobj_t *)th)->mobjnum == oldposition && !(th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed))
+		return (mobj_t *)th;
+	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
+	{
+		if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
+			continue;
+
+		mobj = (mobj_t *)th;
+		if (mobj->mobjnum != oldposition)
+			continue;
+		return mobj;
+	}
+	CONS_Debug(DBG_GAMELOGIC, "mobj not found\n");
+	return NULL;
+}
 
 static inline void P_ArchivePlayer(void)
 {
@@ -808,7 +826,7 @@ static void P_NetUnArchiveWaypoints(void)
 		for (j = 0; j < numwaypoints[i]; j++)
 		{
 			mobjnum = READUINT32(save_p);
-			waypoints[i][j] = (mobjnum == 0) ? NULL : P_FindNewPosition(mobjnum);
+			waypoints[i][j] = (mobjnum == 0) ? NULL : P_FindNewPosition_Hashtable(mobjnum);
 		}
 	}
 }
@@ -4881,7 +4899,11 @@ static void P_NetUnArchiveThinkers(void)
 					I_Error("P_UnarchiveSpecials: Unknown tclass %d in savegame", tclass);
 			}
 			if (th)
+			{
 				P_AddThinker(i, th);
+				if (i == THINK_MOBJ && tclass == tc_mobj)
+					mobjnum_ht_linkedList_AddEntry(th);
+			}
 		}
 
 		CONS_Debug(DBG_NETPLAY, "%u thinkers loaded in list %d\n", numloaded, i);
@@ -4898,7 +4920,7 @@ static void P_NetUnArchiveThinkers(void)
 			delay = (void *)currentthinker;
 			if (!(mobjnum = (UINT32)(size_t)delay->caller))
 				continue;
-			delay->caller = P_FindNewPosition(mobjnum);
+			delay->caller = P_FindNewPosition_Hashtable(mobjnum);
 		}
 	}
 }
@@ -5061,70 +5083,70 @@ static void P_RelinkPointers(void)
 		{
 			temp = (UINT32)(size_t)mobj->tracer;
 			mobj->tracer = NULL;
-			if (!P_SetTarget(&mobj->tracer, P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->tracer, P_FindNewPosition_Hashtable(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "tracer not found on %d\n", mobj->type);
 		}
 		if (mobj->target)
 		{
 			temp = (UINT32)(size_t)mobj->target;
 			mobj->target = NULL;
-			if (!P_SetTarget(&mobj->target, P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->target, P_FindNewPosition_Hashtable(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "target not found on %d\n", mobj->type);
 		}
 		if (mobj->hnext)
 		{
 			temp = (UINT32)(size_t)mobj->hnext;
 			mobj->hnext = NULL;
-			if (!(mobj->hnext = P_FindNewPosition(temp)))
+			if (!(mobj->hnext = P_FindNewPosition_Hashtable(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "hnext not found on %d\n", mobj->type);
 		}
 		if (mobj->hprev)
 		{
 			temp = (UINT32)(size_t)mobj->hprev;
 			mobj->hprev = NULL;
-			if (!(mobj->hprev = P_FindNewPosition(temp)))
+			if (!(mobj->hprev = P_FindNewPosition_Hashtable(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "hprev not found on %d\n", mobj->type);
 		}
 		if (mobj->player && mobj->player->capsule)
 		{
 			temp = (UINT32)(size_t)mobj->player->capsule;
 			mobj->player->capsule = NULL;
-			if (!P_SetTarget(&mobj->player->capsule, P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->player->capsule, P_FindNewPosition_Hashtable(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "capsule not found on %d\n", mobj->type);
 		}
 		if (mobj->player && mobj->player->axis1)
 		{
 			temp = (UINT32)(size_t)mobj->player->axis1;
 			mobj->player->axis1 = NULL;
-			if (!P_SetTarget(&mobj->player->axis1, P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->player->axis1, P_FindNewPosition_Hashtable(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "axis1 not found on %d\n", mobj->type);
 		}
 		if (mobj->player && mobj->player->axis2)
 		{
 			temp = (UINT32)(size_t)mobj->player->axis2;
 			mobj->player->axis2 = NULL;
-			if (!P_SetTarget(&mobj->player->axis2, P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->player->axis2, P_FindNewPosition_Hashtable(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "axis2 not found on %d\n", mobj->type);
 		}
 		if (mobj->player && mobj->player->awayviewmobj)
 		{
 			temp = (UINT32)(size_t)mobj->player->awayviewmobj;
 			mobj->player->awayviewmobj = NULL;
-			if (!P_SetTarget(&mobj->player->awayviewmobj, P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->player->awayviewmobj, P_FindNewPosition_Hashtable(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "awayviewmobj not found on %d\n", mobj->type);
 		}
 		if (mobj->player && mobj->player->followmobj)
 		{
 			temp = (UINT32)(size_t)mobj->player->followmobj;
 			mobj->player->followmobj = NULL;
-			if (!P_SetTarget(&mobj->player->followmobj, P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->player->followmobj, P_FindNewPosition_Hashtable(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "followmobj not found on %d\n", mobj->type);
 		}
 		if (mobj->player && mobj->player->drone)
 		{
 			temp = (UINT32)(size_t)mobj->player->drone;
 			mobj->player->drone = NULL;
-			if (!P_SetTarget(&mobj->player->drone, P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->player->drone, P_FindNewPosition_Hashtable(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "drone not found on %d\n", mobj->type);
 		}
 	}
@@ -5877,6 +5899,9 @@ boolean P_LoadGameState(const savestate_t* savestate)
     INT16 savedGameMap;
 	precise_t currentTime;
 	loadStateBenchmark = I_GetPreciseTime();
+
+	mobjnum_ht_linkedList_Init();
+
 	if (savestate->buffer == NULL)
 	{
 		loadStateBenchmark = I_GetPreciseTime() - loadStateBenchmark;
