@@ -5041,6 +5041,19 @@ int recommendedSimulateTics = 0;
 int smoothingDelay;
 precise_t saveStateBenchmark = 0;
 precise_t loadStateBenchmark = 0;
+precise_t loadUnArchiveMisc = 0;
+precise_t loadUnArchiveWorld = 0;
+precise_t loadUnArchivePolyObjects = 0;
+precise_t loadUnArchiveThinkers = 0;
+precise_t loadUnArchiveSpecials = 0;
+precise_t loadUnArchiveColormaps = 0;
+precise_t loadUnArchiveWaypoints = 0;
+precise_t loadRelinkPointers = 0;
+precise_t loadFinishMobjs = 0;
+precise_t loadLUA_UnArcive = 0;
+precise_t loadLuaBanks = 0;
+// uint16_t	 hashHits;
+// uint16_t	 hashMiss;
 double netUpdateFudge; // our last net update fudge
 
 tic_t SavestatesClearedTic;
@@ -5776,31 +5789,39 @@ void MakeNetDebugString()
 	sprintf(&netDebugText[strlen(netDebugText)], "\nJitter: %d", serverJitter);
 	sprintf(&netDebugText[strlen(netDebugText)], "\nRTTJitter: %d", rttJitter);
 	sprintf(&netDebugText[strlen(netDebugText)], "\nEstRTT: %d", estimatedRTT);
-	sprintf(&netDebugText[strlen(netDebugText)], "\nSimInacc: %d", simInaccuracy);
-	sprintf(&netDebugText[strlen(netDebugText)], "\nGame: %d", gametic);
-	sprintf(&netDebugText[strlen(netDebugText)], "\nSim: %d", simtic);
-	sprintf(&netDebugText[strlen(netDebugText)], "\nSim-Game: %d", simtic - gametic);
-	sprintf(&netDebugText[strlen(netDebugText)], "\nSimDelta: %d", simtic - lastSim);
-	// sprintf(&netDebugText[strlen(netDebugText)], "\nLive: %d", liveTic);
+	sprintf(&netDebugText[strlen(netDebugText)], "\nGameTic: %d", gametic);
+	sprintf(&netDebugText[strlen(netDebugText)], "\nSimTic: %d", simtic);
+	sprintf(&netDebugText[strlen(netDebugText)], "\nSims: %d", simtic - gametic);
 	sprintf(&netDebugText[strlen(netDebugText)], "\nTime save/load: %.4f/%.4f", (float)(I_PreciseToMicros(saveStateBenchmark)) / 1000, (float)(I_PreciseToMicros(loadStateBenchmark)) / 1000);
 	sprintf(&netDebugText[strlen(netDebugText)], "\nSim time: %.4f", (float)(I_PreciseToMicros(simEndTime - simStartTime)) / 1000);
 	sprintf(&netDebugText[strlen(netDebugText)], "\nTotal +ms: %.4f", (float)(I_PreciseToMicros(simEndTime - simStartTime + saveStateBenchmark + loadStateBenchmark))/1000);
+	sprintf(&netDebugText[strlen(netDebugText)], "\nMisc: %.4f", (float)(I_PreciseToMicros(loadUnArchiveMisc)) / 1000);
+	sprintf(&netDebugText[strlen(netDebugText)], "\nWorld: %.4f", (float)(I_PreciseToMicros(loadUnArchiveWorld)) / 1000);
+	sprintf(&netDebugText[strlen(netDebugText)], "\nPolyObjs: %.4f", (float)(I_PreciseToMicros(loadUnArchivePolyObjects)) / 1000);
+	sprintf(&netDebugText[strlen(netDebugText)], "\nThinkers: %.4f", (float)(I_PreciseToMicros(loadUnArchiveThinkers)) / 1000);
+	sprintf(&netDebugText[strlen(netDebugText)], "\nSpecials: %.4f", (float)(I_PreciseToMicros(loadUnArchiveSpecials)) / 1000);
+	sprintf(&netDebugText[strlen(netDebugText)], "\nColormaps: %.4f", (float)(I_PreciseToMicros(loadUnArchiveColormaps)) / 1000);
+	sprintf(&netDebugText[strlen(netDebugText)], "\nWP: %.4f", (float)(I_PreciseToMicros(loadUnArchiveWaypoints)) / 1000);
+	sprintf(&netDebugText[strlen(netDebugText)], "\nRELINKPTS: %.4f", (float)(I_PreciseToMicros(loadRelinkPointers)) / 1000);
+	sprintf(&netDebugText[strlen(netDebugText)], "\nFinishMobjs: %.4f", (float)(I_PreciseToMicros(loadFinishMobjs)) / 1000);
+	sprintf(&netDebugText[strlen(netDebugText)], "\nLUA_UnArch: %.4f", (float)(I_PreciseToMicros(loadLUA_UnArcive)) / 1000);
+	sprintf(&netDebugText[strlen(netDebugText)], "\nLuaBanks: %.4f", (float)(I_PreciseToMicros(loadLuaBanks)) / 1000);
 	// sprintf(&netDebugText[strlen(netDebugText)], "\nseed: %d", P_GetRandSeed());
 	// sprintf(&netDebugText[strlen(netDebugText)], "\nTimeFudge: %d%%", cv_timefudge.value);
-	lastSim = simtic;
+	// lastSim = simtic;
 
-	unsigned int rtts[20] = {0};
-	for (int i = 0; i < rttBufferMax; i++)
-	{
-		if (rttBuffer[i] < 20)
-			rtts[rttBuffer[i]]++;
-	}
+	// unsigned int rtts[20] = {0};
+	// for (int i = 0; i < rttBufferMax; i++)
+	// {
+	// 	if (rttBuffer[i] < 20)
+	// 		rtts[rttBuffer[i]]++;
+	// }
 
-	for (int i = 0; i < 20; i++)
-	{
-		if (rtts[i] > 0)
-			sprintf(&netDebugText[strlen(netDebugText)], "\nRTT %i: %i%%", i, rtts[i] * 100 / rttBufferMax);
-	}
+	// for (int i = 0; i < 20; i++)
+	// {
+	// 	if (rtts[i] > 0)
+	// 		sprintf(&netDebugText[strlen(netDebugText)], "\nRTT %i: %i%%", i, rtts[i] * 100 / rttBufferMax);
+	// }
 }
 
 // startTic and endTics are tics going back in time from the current liveTic

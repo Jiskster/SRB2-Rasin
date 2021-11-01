@@ -3912,7 +3912,7 @@ static void P_LocalArchiveThinkers(void)
 
 	WRITEUINT8(save_p, 0xFF);
 }
-
+/*
 static void P_LocalUnArchiveThinkers()
 {
 	thinker_t *thinker;
@@ -4357,6 +4357,7 @@ static void P_LocalUnArchiveThinkers()
 	skyboxmo[0] = skyboxviewpnts[(skyviewid >= 0) ? skyviewid : 0];
 	skyboxmo[1] = skyboxcenterpnts[(skycenterid >= 0) ? skycenterid : 0];
 }
+*/
 
 /*
 static void P_LocalUnArchiveThinkers(boolean preserveLevel)
@@ -5790,6 +5791,17 @@ void P_GameStateFreeMemory(savestate_t* savestate)
 
 extern precise_t saveStateBenchmark;
 extern precise_t loadStateBenchmark;
+extern precise_t loadUnArchiveMisc;
+extern precise_t loadUnArchiveWorld;
+extern precise_t loadUnArchivePolyObjects;
+extern precise_t loadUnArchiveThinkers;
+extern precise_t loadUnArchiveSpecials;
+extern precise_t loadUnArchiveColormaps;
+extern precise_t loadUnArchiveWaypoints;
+extern precise_t loadRelinkPointers;
+extern precise_t loadFinishMobjs;
+extern precise_t loadLUA_UnArcive;
+extern precise_t loadLuaBanks;
 
 void P_SaveGameState(savestate_t* savestate)
 {
@@ -5863,6 +5875,7 @@ boolean P_LoadGameState(const savestate_t* savestate)
 {
 
     INT16 savedGameMap;
+	precise_t currentTime;
 	loadStateBenchmark = I_GetPreciseTime();
 	if (savestate->buffer == NULL)
 	{
@@ -5887,24 +5900,46 @@ boolean P_LoadGameState(const savestate_t* savestate)
 	con_muted = true;
 	CV_LoadNetVars(&save_p);
 	con_muted = false;
-	// CONS_Printf("P_NetUnArchiveMisc from Netplus\n");
+	currentTime = I_GetPreciseTime();
 	if (!P_NetUnArchiveMisc(true))
+	{
+		loadUnArchiveMisc = I_GetPreciseTime() - currentTime;
 		return false;
+	}
+	loadUnArchiveMisc = I_GetPreciseTime() - currentTime;
 	P_NetUnArchivePlayers();
 	if (gamestate == GS_LEVEL)
 	{
 		// P_NetUnArchiveWorld();
+		currentTime = I_GetPreciseTime();
 		P_LocalUnArchiveWorld();
+		loadUnArchiveWorld = I_GetPreciseTime() - currentTime;
+		currentTime = I_GetPreciseTime();
 		P_UnArchivePolyObjects();
+		loadUnArchivePolyObjects = I_GetPreciseTime() - currentTime;
+		currentTime = I_GetPreciseTime();
 		P_NetUnArchiveThinkers();
+		loadUnArchiveThinkers = I_GetPreciseTime() - currentTime;
+		currentTime = I_GetPreciseTime();
 		P_NetUnArchiveSpecials();
+		loadUnArchiveSpecials = I_GetPreciseTime() - currentTime;
+		currentTime = I_GetPreciseTime();
 		P_NetUnArchiveColormaps();
+		loadUnArchiveColormaps = I_GetPreciseTime() - currentTime;
+		currentTime = I_GetPreciseTime();
 		P_NetUnArchiveWaypoints();
-		P_RelinkPointers();
+		loadUnArchiveWaypoints = I_GetPreciseTime() - currentTime;
+		currentTime = I_GetPreciseTime();
+		P_RelinkPointers(); //candidate for optimization
+		loadRelinkPointers = I_GetPreciseTime() - currentTime;
+		currentTime = I_GetPreciseTime();
 		P_FinishMobjs();
+		loadFinishMobjs = I_GetPreciseTime() - currentTime;
 	}
 	con_muted = true;
-	LUA_UnArchive();
+	currentTime = I_GetPreciseTime();
+	LUA_UnArchive(); //candidate for optimization
+	loadLUA_UnArcive = I_GetPreciseTime() - currentTime;
 	con_muted = false;
 
 	// This is stupid and hacky, but maybe it'll work!
