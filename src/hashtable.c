@@ -69,16 +69,13 @@ void mobjnum_ht_linkedList_AddEntry (thinker_t* thinker)
     {
         if (!currentEntry->thinker)
         {
-            // CONS_Printf("mobj not exists, adding\n");
             currentEntry->thinker = thinker;
             break;
         }
         else
         {
-            // CONS_Printf("mobj exists, go next\n");
             if (!currentEntry->next)
             {
-                // CONS_Printf("next not exists, create\n");
                 currentEntry->next = malloc(sizeof(mobjnum_linkedList));
                 currentEntry->next->thinker = thinker;
                 currentEntry->next->next = NULL;

@@ -24,5 +24,6 @@ extern char netDebugText[10000];
 // TODO: Find GPLv2 hashtable library and optimize the lua object loading code
 void P_GameStateFreeMemory(savestate_t* savestate);
 void P_SaveGameState(savestate_t* savestate);
+mobj_t *P_FindNewPosition_Hashtable(UINT32 oldposition);
 
 boolean P_LoadGameState(const savestate_t* savestate);

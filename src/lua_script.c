@@ -36,6 +36,7 @@
 
 #include "doomstat.h"
 #include "g_state.h"
+#include "p_savenetrb.h" //for P_FindNewPosition_Hashtable
 #include "hashtable.h"
 
 lua_State *gL = NULL;
@@ -1455,7 +1456,7 @@ static UINT8 UnArchiveValue(int TABLESINDEX)
 		LUA_PushUserdata(gL, &states[READUINT16(save_p)], META_STATE);
 		break;
 	case ARCH_MOBJ:
-		LUA_PushUserdata(gL, P_FindNewPosition(READUINT32(save_p)), META_MOBJ);
+		LUA_PushUserdata(gL, P_FindNewPosition_Hashtable(READUINT32(save_p)), META_MOBJ);
 		break;
 	case ARCH_PLAYER:
 		LUA_PushUserdata(gL, &players[READUINT8(save_p)], META_PLAYER);
