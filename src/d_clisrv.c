@@ -5468,6 +5468,9 @@ static void RunSimulations()
 
 			for (current = thlist[THINK_MOBJ].next; current != &thlist[THINK_MOBJ]; current = current->next)
 			{
+				if (P_IsProjectile(((mobj_t *)current)->type))
+					continue;
+
 				for (i = 0; i < numPlayers; i++)
 				{
 					if (P_AproxDistance(playerMos[i]->x - ((mobj_t *)current)->x, playerMos[i]->y - ((mobj_t *)current)->y) < minDistance)
