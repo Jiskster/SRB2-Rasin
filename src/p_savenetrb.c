@@ -41,6 +41,8 @@
 #include "console.h"
 #include "hashtable.h"
 
+
+
 // Block UINT32s to attempt to ensure that the correct data is
 // being preserved
 #define ARCHIVEBLOCK_MISC     0x7FEEDEED
@@ -66,6 +68,10 @@ typedef enum
 	DRONE      = 0x80,
 } player_saveflags;
 
+// Now save the pointers, tracer and target, but at load time we must
+// relink to this; the savegame contains the old position in the pointer
+// field copyed in the info field temporarily, but finally we just search
+// for the old position and relink to it.
 mobj_t *P_FindNewPosition_Hashtable(UINT32 oldposition)
 {
 	thinker_t *th;
@@ -81,6 +87,7 @@ mobj_t *P_FindNewPosition_Hashtable(UINT32 oldposition)
 		mobj = (mobj_t *)th;
 		if (mobj->mobjnum != oldposition)
 			continue;
+
 		return mobj;
 	}
 	CONS_Debug(DBG_GAMELOGIC, "mobj not found\n");
@@ -2850,30 +2857,6 @@ static void P_NetArchiveThinkers(void)
 	}
 }
 
-// Now save the pointers, tracer and target, but at load time we must
-// relink to this; the savegame contains the old position in the pointer
-// field copyed in the info field temporarily, but finally we just search
-// for the old position and relink to it.
-// mobj_t *P_FindNewPosition(UINT32 oldposition)
-// {
-// 	thinker_t *th;
-// 	mobj_t *mobj;
-
-// 	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
-// 	{
-// 		if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
-// 			continue;
-
-// 		mobj = (mobj_t *)th;
-// 		if (mobj->mobjnum != oldposition)
-// 			continue;
-
-// 		return mobj;
-// 	}
-// 	CONS_Debug(DBG_GAMELOGIC, "mobj not found\n");
-// 	return NULL;
-// }
-
 static inline mobj_t *LoadMobj(UINT32 mobjnum)
 {
 	if (mobjnum == 0) return NULL;
@@ -4640,7 +4623,7 @@ static void P_LocalUnArchiveThinkers(boolean preserveLevel)
 			delay = (void *)currentthinker;
 			if (!(mobjnum = (UINT32)(size_t)delay->caller))
 				continue;
-			delay->caller = P_FindNewPosition(mobjnum);
+			delay->caller = P_FindNewPosition_Hashtable(mobjnum);
 		}
 	}
 	for (i = 0; i < sizeof(skyboxmo) / sizeof(skyboxmo[0]); i++)
@@ -5899,9 +5882,6 @@ boolean P_LoadGameState(const savestate_t* savestate)
     INT16 savedGameMap;
 	precise_t currentTime;
 	loadStateBenchmark = I_GetPreciseTime();
-
-	mobjnum_ht_linkedList_Init();
-
 	if (savestate->buffer == NULL)
 	{
 		loadStateBenchmark = I_GetPreciseTime() - loadStateBenchmark;
@@ -5919,6 +5899,8 @@ boolean P_LoadGameState(const savestate_t* savestate)
 		loadStateBenchmark = I_GetPreciseTime() - loadStateBenchmark;
 		return false;
 	}
+
+	mobjnum_ht_linkedList_Init();
 
 	globalmobjnum = READUINT32(save_p);
 

@@ -20,8 +20,8 @@
 
 typedef struct mobjnum_linkedList_s{
     thinker_t* thinker;
-    struct mobjnum_linkedList_s* prev;
-    struct mobjnum_linkedList_s* next;
+    struct mobjnum_linkedList_s* prev; //the first element must always be null
+    struct mobjnum_linkedList_s* next; //the last element must always be null
 }
 mobjnum_linkedList;
 
@@ -29,7 +29,7 @@ mobjnum_linkedList mobjnum_Hashtable[HT_NUMLISTS]; //dumb and idiotic, there are
 //Wish I could just simply make a mobj_t array with UINT64_MAX entries, LOL
 
 void mobjnum_ht_linkedList_Wipe();
-/** Initializes simple mobjnum hashtable linked list.*/
+/** Initializes simple mobjnum/thinker hashtable linked list.*/
 void mobjnum_ht_linkedList_Init()
 {
     mobjnum_ht_linkedList_Wipe();
@@ -42,7 +42,7 @@ void mobjnum_ht_linkedList_Init()
     
 }
 
-/** Adds a mobj's address, determines in which list to add automatically
+/** Adds a thinker's address, determines in which list to add automatically
   *
   * \param mobj     Which mobj's memory address to add 
   */
@@ -80,18 +80,18 @@ void mobjnum_ht_linkedList_AddEntry (thinker_t* thinker)
             {
                 // CONS_Printf("next not exists, create\n");
                 currentEntry->next = malloc(sizeof(mobjnum_linkedList));
-                currentEntry->next->thinker = NULL;
+                currentEntry->next->thinker = thinker;
                 currentEntry->next->next = NULL;
                 currentEntry->next->prev = currentEntry;
+                next = NULL;
             }
             else
-                // CONS_Printf("next exists\n");
-            next = currentEntry->next;
+                next = currentEntry->next;
         }
     }
 }
 
-/** Removes a mobj's address by its mobjnum, determines from which list to remove automatically
+/** Removes a thinker's address by its mobjnum, determines from which list to remove automatically
   *
   * \param mobjnum     Which mobj's memory address to remove by itsmobjnum 
   */
@@ -107,10 +107,10 @@ void mobjnum_ht_linkedList_AddEntry (thinker_t* thinker)
 //     }
 // }
 
-/** Looks for a mobj by its mobjnum.
+/** Looks for a thinker by its mobjnum.
   *
   * \param mobjnumber mobj's mobjnum
-  * \return mobj_t* if an object is found, otherwise NULL.
+  * \return thinker_t* if an object is found, otherwise NULL. Cast it to mobj_t* to get the mobj.
   */
 thinker_t* mobjnum_ht_linkedList_Find (uint32_t mobjnumber)
 {
@@ -137,10 +137,10 @@ thinker_t* mobjnum_ht_linkedList_Find (uint32_t mobjnumber)
 
         if (((mobj_t *)currentEntry->thinker)->mobjnum == mobjnumber)
             return currentEntry->thinker;
-        else
-        {
+        if (currentEntry->next)
             next = currentEntry->next;
-        }
+        else
+            next = NULL;
     }
     return NULL;
 }
@@ -151,7 +151,7 @@ void mobjnum_ht_linkedList_Wipe()
     mobjnum_linkedList* currentEntry; // = &mobjnum_Hashtable[(UINT8)(mobj->mobjnum % HT_NUMLISTS)];
     mobjnum_linkedList* next;
 
-    for (uint8_t i = 0; i < HT_NUMLISTS; i++)
+    for (UINT8 i = 0; i < HT_NUMLISTS; i++)
     {
         if (!mobjnum_Hashtable[i].next)
             continue;
@@ -165,16 +165,13 @@ void mobjnum_ht_linkedList_Wipe()
             if (currentEntry->next)
             {
                 currentEntry->next = NULL;
-                // CONS_Printf("Has Next\n");
             }
             if (currentEntry->thinker)
             {
-                // CONS_Printf("Has mobj\n");
                 currentEntry->thinker = NULL;
             }
-            if (currentEntry->prev)
+            if (currentEntry->prev) //prevents freeing the first element
             {
-                // CONS_Printf("Has Prev\n");
                 currentEntry->prev = NULL;
                 free(currentEntry);
             }

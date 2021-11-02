@@ -387,7 +387,7 @@ consvar_t cv_simmisstics = { "simmisstics", "Yes", 0, CV_YesNo, NULL, 0, NULL, N
 consvar_t cv_jittersmoothing = { "jittersmoothing", "Yes", 0, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL };
 
 static CV_PossibleValue_t simulateculldistance_cons_t[] = { {0, "MIN"}, {10000, "MAX"}, {0, NULL} };
-consvar_t cv_simulateculldistance = { "simcull", "2", 0, simulateculldistance_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_simulateculldistance = { "simcull", "MIN", 0, simulateculldistance_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
 
 static CV_PossibleValue_t siminaccuracy_cons_t[] = { {1, "MIN"}, {10, "MAX"}, {0, NULL} };
 consvar_t cv_siminaccuracy = { "siminaccuracy", "MIN", 0, siminaccuracy_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
@@ -1050,9 +1050,9 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("skynum", Command_Skynum_f);
 	COM_AddCommand("weather", Command_Weather_f);
 	COM_AddCommand("toggletwod", Command_Toggletwod_f);
-// #ifdef _DEBUG
+#ifdef _DEBUG
 	COM_AddCommand("causecfail", Command_CauseCfail_f);
-// #endif
+#endif
 #ifdef LUA_ALLOW_BYTECODE
 	COM_AddCommand("dumplua", Command_Dumplua_f);
 #endif
