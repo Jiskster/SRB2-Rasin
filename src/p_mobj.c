@@ -483,6 +483,10 @@ boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state)
 		state = st->nextstate;
 	} while (!mobj->tics && !seenstate[state]);
 
+	// Full birght players in Match/CTF/Modded GTs
+	if (cv_playerfullbright.value && !(G_PlatformGametype()) && !(G_TagGametype()))
+		mobj->frame |= FF_FULLBRIGHT;
+
 	if (!mobj->tics)
 		CONS_Alert(CONS_WARNING, M_GetText("State cycle detected, exiting.\n"));
 
