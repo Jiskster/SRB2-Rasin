@@ -35,6 +35,7 @@
 #include "lua_script.h"
 #include "p_setup.h"
 #include "p_slopes.h"
+#include "hashtable.h" //I don't want to use hashtables there, but there will be anyways in the future
 
 savedata_t savedata;
 UINT8 *save_p;
@@ -2536,6 +2537,8 @@ static void P_NetArchiveThinkers(void)
 			if (!(th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed
 			 || th->function.acp1 == (actionf_p1)P_NullPrecipThinker))
 				numsaved++;
+			else
+				continue;
 
 			if (th->function.acp1 == (actionf_p1)P_MobjThinker)
 			{
@@ -5544,6 +5547,9 @@ boolean P_LoadGame(INT16 mapoverride)
 
 boolean P_LoadNetGame(boolean reloading)
 {
+	mobjnum_ht_linkedList_Init(); //clean up hashtables to avoid lua stuff using them
+								  //this is temporary and will be rewritten to use in vanilla code
+								  //once rollback netcode will be stable
 	CV_LoadNetVars(&save_p);
 	if (!P_NetUnArchiveMisc(reloading))
 		return false;

@@ -2636,6 +2636,8 @@ static void P_NetArchiveThinkers(void)
 			if (!(th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed
 			 || th->function.acp1 == (actionf_p1)P_NullPrecipThinker))
 				numsaved++;
+			else
+				continue;
 
 			if (th->function.acp1 == (actionf_p1)P_MobjThinker)
 			{
@@ -5882,6 +5884,7 @@ boolean P_LoadGameState(const savestate_t* savestate)
     INT16 savedGameMap;
 	precise_t currentTime;
 	loadStateBenchmark = I_GetPreciseTime();
+	mobjnum_ht_linkedList_Init();
 	if (savestate->buffer == NULL)
 	{
 		loadStateBenchmark = I_GetPreciseTime() - loadStateBenchmark;
@@ -5899,8 +5902,6 @@ boolean P_LoadGameState(const savestate_t* savestate)
 		loadStateBenchmark = I_GetPreciseTime() - loadStateBenchmark;
 		return false;
 	}
-
-	mobjnum_ht_linkedList_Init();
 
 	globalmobjnum = READUINT32(save_p);
 
