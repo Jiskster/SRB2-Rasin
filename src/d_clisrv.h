@@ -171,6 +171,13 @@ typedef struct
 	UINT8 modifiedgame;
 
 	char server_context[8]; // Unique context id, generated at server startup.
+
+	// Discord info (always defined for net compatibility)
+	UINT8 maxplayer;
+	boolean allownewplayer;
+	boolean discordinvites;
+
+	UINT8 varlengthinputs[0]; // Playernames and netvars
 } ATTRPACK serverconfig_pak;
 
 typedef struct
@@ -340,7 +347,7 @@ extern INT32 mapchangepending;
 
 // Points inside doomcom
 extern doomdata_t *netbuffer;
-
+extern consvar_t cv_stunserver;
 extern consvar_t cv_showjoinaddress;
 extern consvar_t cv_playbackspeed;
 
@@ -407,6 +414,8 @@ extern tic_t servermaxping;
 extern consvar_t cv_netticbuffer, cv_allownewplayer, cv_joinnextround, cv_maxplayers, cv_joindelay, cv_rejointimeout;
 extern consvar_t cv_resynchattempts, cv_blamecfail;
 extern consvar_t cv_maxsend, cv_noticedownload, cv_downloadspeed;
+
+extern consvar_t cv_discordinvites;
 
 // Used in d_net, the only dependence
 tic_t ExpandTics(INT32 low, INT32 node);

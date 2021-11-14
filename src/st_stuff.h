@@ -32,6 +32,11 @@ void ST_Drawer(void);
 // Called when the console player is spawned on each level.
 void ST_Start(void);
 
+#ifdef HAVE_DISCORDRPC
+// Called when you have Discord asks
+void ST_AskToJoinEnvelope(void);
+#endif
+
 // Called by startup code.
 void ST_Init(void);
 

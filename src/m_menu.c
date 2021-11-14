@@ -79,6 +79,11 @@
 #define FIXUPO0
 #endif
 
+#ifdef HAVE_DISCORDRPC
+//#include "discord_rpc.h"
+#include "discord.h"
+#endif
+
 #define SKULLXOFF -32
 #define LINEHEIGHT 16
 #define STRINGHEIGHT 8
@@ -198,6 +203,12 @@ static void M_RoomMenu(INT32 choice);
 
 // the haxor message menu
 menu_t MessageDef;
+
+#ifdef HAVE_DISCORDRPC
+menu_t MISC_DiscordRequestsDef;
+static void M_HandleDiscordRequests(INT32 choice);
+static void M_DrawDiscordRequests(void);
+#endif
 
 menu_t SPauseDef;
 
@@ -336,6 +347,9 @@ menu_t OP_SoundAdvancedDef;
 //Misc
 menu_t OP_DataOptionsDef, OP_ScreenshotOptionsDef, OP_EraseDataDef;
 menu_t OP_ServerOptionsDef;
+#ifdef HAVE_DISCORDRPC
+menu_t OP_DiscordOptionsDef;
+#endif
 menu_t OP_MonitorToggleDef;
 static void M_ScreenshotOptions(INT32 choice);
 static void M_SetupScreenshotMenu(void);
@@ -559,6 +573,10 @@ static menuitem_t MPauseMenu[] =
 	{IT_STRING | IT_SUBMENU, NULL, "Scramble Teams...",         &MISC_ScrambleTeamDef, 16},
 	{IT_STRING | IT_CALL,    NULL, "Switch Gametype/Level...",  M_MapChange,           24},
 
+	#ifdef HAVE_DISCORDRPC
+	{IT_STRING | IT_SUBMENU,  NULL, "Ask To Join Requests...", &MISC_DiscordRequestsDef, 24},
+	#endif
+
 	{IT_STRING | IT_CALL,    NULL, "Continue",                  M_SelectableClearMenus,40},
 	{IT_STRING | IT_CALL,    NULL, "Player 1 Setup",            M_SetupMultiPlayer,    48}, // splitscreen
 	{IT_STRING | IT_CALL,    NULL, "Player 2 Setup",            M_SetupMultiPlayer2,   56}, // splitscreen
@@ -578,6 +596,9 @@ typedef enum
 	mpause_addons = 0,
 	mpause_scramble,
 	mpause_switchmap,
+#ifdef HAVE_DISCORDRPC
+	mpause_discordrequests,
+#endif
 
 	mpause_continue,
 	mpause_psetupsplit,
@@ -623,6 +644,13 @@ typedef enum
 	spause_title,
 	spause_quit
 } spause_e;
+
+#ifdef HAVE_DISCORDRPC
+static menuitem_t MISC_DiscordRequestsMenu[] =
+{
+	{IT_KEYHANDLER|IT_NOTHING, NULL, "", M_HandleDiscordRequests, 0},
+};
+#endif
 
 // -----------------
 // Misc menu options
@@ -1539,8 +1567,13 @@ static menuitem_t OP_DataOptionsMenu[] =
 {
 	{IT_STRING | IT_CALL,    NULL, "Add-on Options...",     M_AddonsOptions,     10},
 	{IT_STRING | IT_CALL,    NULL, "Screenshot Options...", M_ScreenshotOptions, 20},
+#ifdef HAVE_DISCORDRPC
+	{IT_STRING | IT_SUBMENU, NULL, "Discord Options...",	&OP_DiscordOptionsDef,	 40},
 
-	{IT_STRING | IT_SUBMENU, NULL, "\x85" "Erase Data...",  &OP_EraseDataDef,    40},
+	{IT_STRING | IT_SUBMENU, NULL, "\x85" "Erase Data...",	&OP_EraseDataDef,		 60},
+#else
+	{IT_STRING | IT_SUBMENU, NULL, "\x85" "Erase Data...",	&OP_EraseDataDef,		 50},
+#endif
 };
 
 static menuitem_t OP_ScreenshotOptionsMenu[] =
@@ -1610,6 +1643,20 @@ enum
 {
 	op_addons_folder = 2,
 };
+
+#ifdef HAVE_DISCORDRPC
+static menuitem_t OP_DiscordOptionsMenu[] =
+{
+	{IT_STRING | IT_CVAR,		NULL, "Rich Presence",			&cv_discordrp,			 10},
+
+	{IT_HEADER,					NULL, "Rich Presence Settings",	NULL,					 30},
+	{IT_STRING | IT_CVAR,		NULL, "Streamer Mode",			&cv_discordstreamer,	 40},
+
+	{IT_STRING | IT_CVAR,		NULL, "Allow Ask To Join",		&cv_discordasks,		 60},
+	{IT_STRING | IT_CVAR,		NULL, "Allow Invites",			&cv_discordinvites,		 70},
+	{IT_STRING | IT_CVAR,		NULL, "Show Character on Status",	&cv_discordshowchar,		 80},
+};
+#endif
 
 static menuitem_t OP_ServerOptionsMenu[] =
 {
@@ -1760,6 +1807,20 @@ menu_t MISC_ChangeLevelDef =
 };
 
 menu_t MISC_HelpDef = IMAGEDEF(MISC_HelpMenu);
+
+#ifdef HAVE_DISCORDRPC
+menu_t MISC_DiscordRequestsDef = {
+    MN_DISCORD_RQ,
+	NULL,
+	sizeof (MISC_DiscordRequestsMenu)/sizeof (menuitem_t),
+	&MPauseDef,
+	MISC_DiscordRequestsMenu,
+	M_DrawDiscordRequests,
+	0, 0,
+	0,
+	NULL
+};
+#endif
 
 static INT32 highlightflags, recommendedflags, warningflags;
 
@@ -2301,6 +2362,10 @@ menu_t OP_AddonsOptionsDef = DEFAULTMENUSTYLE(
 menu_t OP_EraseDataDef = DEFAULTMENUSTYLE(
 	MTREE3(MN_OP_MAIN, MN_OP_DATA, MN_OP_ERASEDATA),
 	"M_DATA", OP_EraseDataMenu, &OP_DataOptionsDef, 60, 30);
+
+#ifdef HAVE_DISCORDRPC
+menu_t OP_DiscordOptionsDef = DEFAULTMENUSTYLE(MTREE3(MN_OP_MAIN, MN_OP_DATA, MN_DISCORD_OPT), NULL, OP_DiscordOptionsMenu, &OP_DataOptionsDef, 30, 30);
+#endif
 
 //Netplus options menu
 menu_t OP_NetPlusDef = DEFAULTSCROLLMENUSTYLE(
@@ -3780,6 +3845,11 @@ void M_StartControlPanel(void)
 		MPauseMenu[mpause_switchteam].status = IT_DISABLED;
 		MPauseMenu[mpause_psetup].status = IT_DISABLED;
 
+		// Reset these in case splitscreen messes things up
+		MPauseMenu[mpause_addons].alphaKey = 8;
+		MPauseMenu[mpause_scramble].alphaKey = 8;
+		MPauseMenu[mpause_switchmap].alphaKey = 24;
+
 		if ((server || IsPlayerAdmin(consoleplayer)))
 		{
 			MPauseMenu[mpause_switchmap].status = IT_STRING | IT_CALL;
@@ -3805,6 +3875,19 @@ void M_StartControlPanel(void)
 			else // in this odd case, we still want something to be on the menu even if it's useless
 				MPauseMenu[mpause_spectate].status = IT_GRAYEDOUT;
 		}
+
+#ifdef HAVE_DISCORDRPC
+		{
+			UINT8 i;
+
+			for (i = 0; i < mpause_discordrequests; i++)
+				MPauseMenu[i].alphaKey -= 8;
+
+			MPauseMenu[mpause_discordrequests].alphaKey = MPauseMenu[i].alphaKey;
+
+			M_RefreshPauseMenu();
+		}
+#endif
 
 		currentMenu = &MPauseDef;
 		itemOn = mpause_continue;
@@ -5059,6 +5142,25 @@ static void M_DrawPauseMenu(void)
 		}
 	}
 
+#ifdef HAVE_DISCORDRPC
+	// kind of hackily baked in here
+	if (currentMenu == &MPauseDef && discordRequestList != NULL)
+	{
+		const tic_t freq = TICRATE/2;
+
+		if ((leveltime % freq) >= freq/2)
+		{
+			V_DrawFixedPatch(204 * FRACUNIT,
+				(currentMenu->y + MPauseMenu[mpause_discordrequests].alphaKey - 1) * FRACUNIT,
+				FRACUNIT,
+				0,
+				W_CachePatchName("K_REQUE2", PU_CACHE),
+				NULL
+			);
+		}
+	}
+#endif
+
 	M_DrawGenericMenu();
 }
 
@@ -5633,7 +5735,7 @@ static void M_HandleLevelPlatter(INT32 choice)
 				{
 					if (!lsoffs[0]) // prevent sound spam
 					{
-						lsoffs[0] = -8;
+						lsoffs[0] = -8 * FRACUNIT;
 						S_StartSound(NULL,sfx_s3kb7);
 					}
 					return;
@@ -5642,7 +5744,7 @@ static void M_HandleLevelPlatter(INT32 choice)
 			}
 			lsrow++;
 
-			lsoffs[0] = lsvseperation(lsrow);
+			lsoffs[0] = lsvseperation(lsrow) * FRACUNIT;
 
 			if (levelselect.rows[lsrow].header[0])
 				lshli = lsrow;
@@ -5661,7 +5763,7 @@ static void M_HandleLevelPlatter(INT32 choice)
 				{
 					if (!lsoffs[0]) // prevent sound spam
 					{
-						lsoffs[0] = 8;
+						lsoffs[0] = 8 * FRACUNIT;
 						S_StartSound(NULL,sfx_s3kb7);
 					}
 					return;
@@ -5670,7 +5772,7 @@ static void M_HandleLevelPlatter(INT32 choice)
 			}
 			lsrow--;
 
-			lsoffs[0] = -lsvseperation(iter);
+			lsoffs[0] = -lsvseperation(iter) * FRACUNIT;
 
 			if (levelselect.rows[lsrow].header[0])
 				lshli = lsrow;
@@ -5711,7 +5813,7 @@ static void M_HandleLevelPlatter(INT32 choice)
 				}
 				else if (!lsoffs[0]) // prevent sound spam
 				{
-					lsoffs[0] = -8;
+					lsoffs[0] = -8 * FRACUNIT;
 					S_StartSound(NULL,sfx_s3kb2);
 				}
 				break;
@@ -5737,14 +5839,14 @@ static void M_HandleLevelPlatter(INT32 choice)
 			{
 				lscol++;
 
-				lsoffs[1] = (lswide(lsrow) ? 8 : -lshseperation);
+				lsoffs[1] = (lswide(lsrow) ? 8 : -lshseperation) * FRACUNIT;
 				S_StartSound(NULL,sfx_s3kb7);
 
 				ifselectvalnextmap(lscol) else ifselectvalnextmap(0)
 			}
 			else if (!lsoffs[1]) // prevent sound spam
 			{
-				lsoffs[1] = 8;
+				lsoffs[1] = 8 * FRACUNIT;
 				S_StartSound(NULL,sfx_s3kb7);
 			}
 			break;
@@ -5769,14 +5871,14 @@ static void M_HandleLevelPlatter(INT32 choice)
 			{
 				lscol--;
 
-				lsoffs[1] = (lswide(lsrow) ? -8 : lshseperation);
+				lsoffs[1] = (lswide(lsrow) ? -8 : lshseperation) * FRACUNIT;
 				S_StartSound(NULL,sfx_s3kb7);
 
 				ifselectvalnextmap(lscol) else ifselectvalnextmap(0)
 			}
 			else if (!lsoffs[1]) // prevent sound spam
 			{
-				lsoffs[1] = -8;
+				lsoffs[1] = -8 * FRACUNIT;
 				S_StartSound(NULL,sfx_s3kb7);
 			}
 			break;
@@ -5939,7 +6041,7 @@ static void M_DrawRecordAttackForeground(void)
 
 	for (i = -12; i < (BASEVIDHEIGHT/height) + 12; i++)
 	{
-		INT32 y = ((i*height) - (height - ((recatkdrawtimer*2)%height)));
+		INT32 y = ((i*height) - (height - ((FixedInt(recatkdrawtimer*2))%height)));
 		// don't draw above the screen
 		{
 			INT32 sy = FixedMul(y, dupz<<FRACBITS) >> FRACBITS;
@@ -5956,7 +6058,7 @@ static void M_DrawRecordAttackForeground(void)
 	}
 
 	// draw clock
-	fa = (FixedAngle(((recatkdrawtimer * 4) % 360)<<FRACBITS)>>ANGLETOFINESHIFT) & FINEMASK;
+	fa = (FixedAngle(((FixedInt(recatkdrawtimer * 4)) % 360)<<FRACBITS)>>ANGLETOFINESHIFT) & FINEMASK;
 	V_DrawSciencePatch(160<<FRACBITS, (80<<FRACBITS) + (4*FINESINE(fa)), 0, clock, FRACUNIT);
 
 	// Increment timer.
@@ -7134,7 +7236,11 @@ static void M_Options(INT32 choice)
 	OP_MainMenu[5].status = (Playing() && !(server || IsPlayerAdmin(consoleplayer))) ? (IT_GRAYEDOUT) : (IT_STRING|IT_CALL);
 
 	// if the player is playing _at all_, disable the erase data options
+#ifdef HAVE_DISCORDRPC
+	OP_DataOptionsMenu[3].status = (Playing()) ? (IT_GRAYEDOUT) : (IT_STRING|IT_SUBMENU);
+#else
 	OP_DataOptionsMenu[2].status = (Playing()) ? (IT_GRAYEDOUT) : (IT_STRING|IT_SUBMENU);
+#endif
 
 	OP_MainDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&OP_MainDef);
@@ -7167,6 +7273,20 @@ static void M_SelectableClearMenus(INT32 choice)
 {
 	(void)choice;
 	M_ClearMenus(true);
+}
+
+void M_RefreshPauseMenu(void)
+{
+#ifdef HAVE_DISCORDRPC
+	if (discordRequestList != NULL)
+	{
+		MPauseMenu[mpause_discordrequests].status = IT_STRING | IT_SUBMENU;
+	}
+	else
+	{
+		MPauseMenu[mpause_discordrequests].status = IT_GRAYEDOUT;
+	}
+#endif
 }
 
 // ======
@@ -13633,3 +13753,160 @@ static void M_QuitSRB2(INT32 choice)
 	(void)choice;
 	M_StartMessage(quitmsg[M_RandomKey(NUM_QUITMESSAGES)], M_QuitResponse, MM_YESNO);
 }
+#ifdef HAVE_DISCORDRPC
+static const tic_t confirmLength = 3*TICRATE/4;
+static tic_t confirmDelay = 0;
+static boolean confirmAccept = false;
+
+static void M_HandleDiscordRequests(INT32 choice)
+{
+	if (confirmDelay > 0)
+		return;
+
+	switch (choice)
+	{
+		case KEY_ENTER:
+			Discord_Respond(discordRequestList->userID, DISCORD_REPLY_YES);
+			confirmAccept = true;
+			confirmDelay = confirmLength;
+			S_StartSound(NULL, sfx_s3k63);
+			break;
+
+		case KEY_ESCAPE:
+			Discord_Respond(discordRequestList->userID, DISCORD_REPLY_NO);
+			confirmAccept = false;
+			confirmDelay = confirmLength;
+			S_StartSound(NULL, sfx_s3kb2);
+			break;
+	}
+}
+
+static const char *M_GetDiscordName(discordRequest_t *r)
+{
+	if (r == NULL)
+		return "";
+
+	if (cv_discordstreamer.value)
+		return r->username;
+
+	return va("%s#%s", r->username, r->discriminator);
+}
+
+// (this goes in k_hud.c when merged into v2)
+static void M_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean small)
+{
+	patch_t *stickerEnd;
+	INT32 height;
+	
+	if (small == true)
+	{
+		stickerEnd = W_CachePatchName("K_STIKE2", PU_CACHE);
+		height = 6;
+	}
+	else
+	{
+		stickerEnd = W_CachePatchName("K_STIKEN", PU_CACHE);
+		height = 11;
+	}
+
+	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, flags, stickerEnd, NULL);
+	V_DrawFill(x, y, width, height, 24|flags);
+	V_DrawFixedPatch((x + width)*FRACUNIT, y*FRACUNIT, FRACUNIT, flags|V_FLIP, stickerEnd, NULL);
+}
+
+static void M_DrawDiscordRequests(void)
+{
+	discordRequest_t *curRequest = discordRequestList;
+	UINT8 *colormap;
+	patch_t *hand = NULL;
+	boolean removeRequest = false;
+
+	const char *wantText = "...would like to join!";
+	const char *controlText = "\x82" "ENTER" "\x80" " - Accept    " "\x82" "ESC" "\x80" " - Decline";
+
+	INT32 x = 100;
+	INT32 y = 133;
+
+	INT32 slide = 0;
+	INT32 maxYSlide = 18;
+
+	if (confirmDelay > 0)
+	{
+		if (confirmAccept == true)
+		{
+			colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GREEN, GTC_CACHE);
+			hand = W_CachePatchName("K_LAPH02", PU_CACHE);
+		}
+		else
+		{
+			colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_RED, GTC_CACHE);
+			hand = W_CachePatchName("K_LAPH03", PU_CACHE);
+		}
+
+		slide = confirmLength - confirmDelay;
+
+		confirmDelay--;
+
+		if (confirmDelay == 0)
+			removeRequest = true;
+	}
+	else
+	{
+		colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GREY, GTC_CACHE);
+	}
+
+	V_DrawFixedPatch(56*FRACUNIT, 150*FRACUNIT, FRACUNIT, 0, W_CachePatchName("K_LAPE01", PU_CACHE), colormap);
+
+	if (hand != NULL)
+	{
+		fixed_t handoffset = (4 - abs((signed)(skullAnimCounter - 4))) * FRACUNIT;
+		V_DrawFixedPatch(56*FRACUNIT, 150*FRACUNIT + handoffset, FRACUNIT, 0, hand, NULL);
+	}
+
+	M_DrawSticker(x + (slide * 32), y - 1, V_ThinStringWidth(M_GetDiscordName(curRequest), V_ALLOWLOWERCASE|V_6WIDTHSPACE), 0, false);
+	V_DrawThinString(x + (slide * 32), y, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_YELLOWMAP, M_GetDiscordName(curRequest));
+
+	M_DrawSticker(x, y + 12, V_ThinStringWidth(wantText, V_ALLOWLOWERCASE|V_6WIDTHSPACE), 0, true);
+	V_DrawThinString(x, y + 10, V_ALLOWLOWERCASE|V_6WIDTHSPACE, wantText);
+
+	M_DrawSticker(x, y + 26, V_ThinStringWidth(controlText, V_ALLOWLOWERCASE|V_6WIDTHSPACE), 0, true);
+	V_DrawThinString(x, y + 24, V_ALLOWLOWERCASE|V_6WIDTHSPACE, controlText);
+
+	y -= 18;
+
+	while (curRequest->next != NULL)
+	{
+		INT32 ySlide = min(slide * 4, maxYSlide);
+
+		curRequest = curRequest->next;
+
+		M_DrawSticker(x, y - 1 + ySlide, V_ThinStringWidth(M_GetDiscordName(curRequest), V_ALLOWLOWERCASE|V_6WIDTHSPACE), 0, false);
+		V_DrawThinString(x, y + ySlide, V_ALLOWLOWERCASE|V_6WIDTHSPACE, M_GetDiscordName(curRequest));
+
+		y -= 12;
+		maxYSlide = 12;
+	}
+
+	if (removeRequest == true)
+	{
+		DRPC_RemoveRequest(discordRequestList);
+
+		if (discordRequestList == NULL)
+		{
+			// No other requests
+			MPauseMenu[mpause_discordrequests].status = IT_GRAYEDOUT;
+
+			if (currentMenu->prevMenu)
+			{
+				M_SetupNextMenu(currentMenu->prevMenu);
+				if (currentMenu == &MPauseDef)
+					itemOn = mpause_continue;
+			}
+			else
+				M_ClearMenus(true);
+
+			return;
+		}
+	}
+}
+#endif

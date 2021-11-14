@@ -83,6 +83,10 @@ static CV_PossibleValue_t constextsize_cons_t[] = {
 static void CV_constextsize_OnChange(void);
 consvar_t cv_constextsize = CVAR_INIT ("con_textsize", "Medium", CV_SAVE|CV_CALL, constextsize_cons_t, CV_constextsize_OnChange);
 
+#ifdef HAVE_DISCORDRPC
+#include "discord.h"
+#endif
+
 // local copy of the palette for V_GetColor()
 RGBA_t *pLocalPalette = NULL;
 RGBA_t *pMasterPalette = NULL;

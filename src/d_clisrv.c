@@ -53,6 +53,10 @@
 #include "f_finale.h"
 #endif
 
+#ifdef HAVE_DISCORDRPC
+#include "discord.h"
+#endif
+
 //
 // NETWORKING
 //
@@ -3099,6 +3103,9 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 	}
 	else
 		CL_RemovePlayer(pnum, kickreason);
+#ifdef HAVE_DISCORDRPC
+    	DRPC_UpdatePresence();
+#endif
 }
 
 static void Command_ResendGamestate(void)
@@ -3132,10 +3139,11 @@ static void Command_ResendGamestate(void)
 static CV_PossibleValue_t netticbuffer_cons_t[] = {{0, "MIN"}, {3, "MAX"}, {0, NULL}};
 consvar_t cv_netticbuffer = CVAR_INIT ("netticbuffer", "1", CV_SAVE, netticbuffer_cons_t, NULL);
 
-consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
+static void Joinable_OnChange(void);
+consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR, CV_OnOff, Joinable_OnChange);
 consvar_t cv_joinnextround = CVAR_INIT ("joinnextround", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL); /// \todo not done
 static CV_PossibleValue_t maxplayers_cons_t[] = {{2, "MIN"}, {32, "MAX"}, {0, NULL}};
-consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_NETVAR, maxplayers_cons_t, NULL);
+consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_NETVAR, maxplayers_cons_t, Joinable_OnChange);
 static CV_PossibleValue_t joindelay_cons_t[] = {{1, "MIN"}, {3600, "MAX"}, {0, "Off"}, {0, NULL}};
 consvar_t cv_joindelay = CVAR_INIT ("joindelay", "10", CV_SAVE|CV_NETVAR, joindelay_cons_t, NULL);
 static CV_PossibleValue_t rejointimeout_cons_t[] = {{1, "MIN"}, {60 * FRACUNIT, "MAX"}, {0, "Off"}, {0, NULL}};
@@ -3144,6 +3152,10 @@ consvar_t cv_rejointimeout = CVAR_INIT ("rejointimeout", "2", CV_SAVE|CV_NETVAR|
 static CV_PossibleValue_t resynchattempts_cons_t[] = {{1, "MIN"}, {20, "MAX"}, {0, "No"}, {0, NULL}};
 consvar_t cv_resynchattempts = CVAR_INIT ("resynchattempts", "10", CV_SAVE|CV_NETVAR, resynchattempts_cons_t, NULL);
 consvar_t cv_blamecfail = CVAR_INIT ("blamecfail", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
+
+// Here for dedicated servers
+static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Admins Only"}, {1, "Everyone"}, {0, NULL}};
+consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, Joinable_OnChange);
 
 // max file size to send to a player (in kilobytes)
 static CV_PossibleValue_t maxsend_cons_t[] = {{0, "MIN"}, {51200, "MAX"}, {0, NULL}};
@@ -3155,6 +3167,24 @@ static CV_PossibleValue_t downloadspeed_cons_t[] = {{0, "MIN"}, {32, "MAX"}, {0,
 consvar_t cv_downloadspeed = CVAR_INIT ("downloadspeed", "16", CV_SAVE|CV_NETVAR, downloadspeed_cons_t, NULL);
 
 static void Got_AddPlayer(UINT8 **p, INT32 playernum);
+
+static void Joinable_OnChange(void)
+{
+	UINT8 buf[3];
+	UINT8 *p = buf;
+	UINT8 maxplayer;
+
+	if (!server)
+		return;
+
+	maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
+
+	WRITEUINT8(p, maxplayer);
+	WRITEUINT8(p, cv_allownewplayer.value);
+	WRITEUINT8(p, cv_discordinvites.value);
+
+	SendNetXCmd(XD_DISCORD, &buf, 3);
+}
 
 // called one time at init
 void D_ClientServerInit(void)
@@ -3480,6 +3510,9 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	if (!rejoined)
 		LUAh_PlayerJoin(newplayernum);
+#ifdef HAVE_DISCORDRPC
+    	DRPC_UpdatePresence();
+#endif
 }
 
 static boolean SV_AddWaitingPlayers(const char *name, const char *name2)
@@ -3949,6 +3982,14 @@ static void HandlePacketFromAwayNode(SINT8 node)
 				modifiedgame = netbuffer->u.servercfg.modifiedgame;
 				memcpy(server_context, netbuffer->u.servercfg.server_context, 8);
 			}
+
+#ifdef HAVE_DISCORDRPC
+			discordInfo.maxPlayers = netbuffer->u.serverinfo.maxplayer;
+			/*discordInfo.joinsAllowed = netbuffer->u.servercfg.allownewplayer;
+			discordInfo.everyoneCanInvite = netbuffer->u.servercfg.discordinvites;*/
+			discordInfo.joinsAllowed = true;
+			discordInfo.everyoneCanInvite = true;
+#endif
 
 			nodeingame[(UINT8)servernode] = true;
 			serverplayer = netbuffer->u.servercfg.serverplayer;

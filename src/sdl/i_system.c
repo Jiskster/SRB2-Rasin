@@ -2168,8 +2168,6 @@ tic_t I_GetTime(void)
 	It also messes with SRB2netplus's timer fudge, meaning that for a truly accurate timerfudge it needs to know which timer the server is using...
 	Fudge the timer to sync better with online games. Uses multiply-first approach (more accurate)*/
 
-	//We need more testing if it surely does make the game more jittery to play - JF049 
-
 	// fudge the timer for better netgame sync
 	if (cv_timefudge.value != lastTimeFudge)
 	{
@@ -2182,9 +2180,9 @@ tic_t I_GetTime(void)
 		}
 
 		elapsed = (double)(elapsed + cv_timefudge.value / 100);
-		// 100? probably it's just to get a float number from 0 to 1 by dividing timefudge/100
+		// 100 is just to get a float number from 0 to 1 by dividing timefudge/100
 		// this probably allows to move the time in slight steps
-		// knowing that this is a FP value, this makes sense.
+		// knowing that "elapsed" is a FP value, this makes sense.
 		// jitters happen when we are not "even" with timers within 0..1 (and also depending on latency)
 
 		lastTimeFudge = cv_timefudge.value;

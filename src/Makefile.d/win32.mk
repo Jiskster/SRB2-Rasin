@@ -47,6 +47,17 @@ x86=x86_64
 i686=x86_64
 endif
 
+ifdef HAVE_DISCORDRPC
+ifdef MINGW64
+opts+=-I../libs/discord-rpc/win64-dynamic/include
+libs+=-L../libs/discord-rpc/win64-dynamic/lib
+else
+opts+=-I../libs/discord-rpc/win32-dynamic/include
+libs+=-L../libs/discord-rpc/win32-dynamic/lib
+endif
+libs+=-ldiscord-rpc
+endif
+
 mingw:=$(i686)-w64-mingw32
 
 define _set =
