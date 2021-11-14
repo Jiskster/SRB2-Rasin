@@ -1,4 +1,5 @@
 # Sonic Robo Blast 2 NetPlus - Rollback Netcode mod
+[![Build Status](https://droneci.netplus.friskyfox.art/api/badges/NetPlus/netplus/status.svg)](https://droneci.netplus.friskyfox.art/NetPlus/netplus)
 
 [Sonic Robo Blast 2](https://srb2.org/) is a 3D Sonic the Hedgehog fangame based on a modified version of [Doom Legacy](http://doomlegacy.sourceforge.net/).
 
