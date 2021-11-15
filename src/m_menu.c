@@ -5735,7 +5735,7 @@ static void M_HandleLevelPlatter(INT32 choice)
 				{
 					if (!lsoffs[0]) // prevent sound spam
 					{
-						lsoffs[0] = -8 * FRACUNIT;
+						lsoffs[0] = -8;
 						S_StartSound(NULL,sfx_s3kb7);
 					}
 					return;
@@ -5744,7 +5744,7 @@ static void M_HandleLevelPlatter(INT32 choice)
 			}
 			lsrow++;
 
-			lsoffs[0] = lsvseperation(lsrow) * FRACUNIT;
+			lsoffs[0] = lsvseperation(lsrow);
 
 			if (levelselect.rows[lsrow].header[0])
 				lshli = lsrow;
@@ -5763,7 +5763,7 @@ static void M_HandleLevelPlatter(INT32 choice)
 				{
 					if (!lsoffs[0]) // prevent sound spam
 					{
-						lsoffs[0] = 8 * FRACUNIT;
+						lsoffs[0] = 8;
 						S_StartSound(NULL,sfx_s3kb7);
 					}
 					return;
@@ -5772,7 +5772,7 @@ static void M_HandleLevelPlatter(INT32 choice)
 			}
 			lsrow--;
 
-			lsoffs[0] = -lsvseperation(iter) * FRACUNIT;
+			lsoffs[0] = -lsvseperation(iter);
 
 			if (levelselect.rows[lsrow].header[0])
 				lshli = lsrow;
@@ -5813,7 +5813,7 @@ static void M_HandleLevelPlatter(INT32 choice)
 				}
 				else if (!lsoffs[0]) // prevent sound spam
 				{
-					lsoffs[0] = -8 * FRACUNIT;
+					lsoffs[0] = -8;
 					S_StartSound(NULL,sfx_s3kb2);
 				}
 				break;
@@ -5839,14 +5839,14 @@ static void M_HandleLevelPlatter(INT32 choice)
 			{
 				lscol++;
 
-				lsoffs[1] = (lswide(lsrow) ? 8 : -lshseperation) * FRACUNIT;
+				lsoffs[1] = (lswide(lsrow) ? 8 : -lshseperation);
 				S_StartSound(NULL,sfx_s3kb7);
 
 				ifselectvalnextmap(lscol) else ifselectvalnextmap(0)
 			}
 			else if (!lsoffs[1]) // prevent sound spam
 			{
-				lsoffs[1] = 8 * FRACUNIT;
+				lsoffs[1] = 8;
 				S_StartSound(NULL,sfx_s3kb7);
 			}
 			break;
@@ -5871,14 +5871,14 @@ static void M_HandleLevelPlatter(INT32 choice)
 			{
 				lscol--;
 
-				lsoffs[1] = (lswide(lsrow) ? -8 : lshseperation) * FRACUNIT;
+				lsoffs[1] = (lswide(lsrow) ? -8 : lshseperation);
 				S_StartSound(NULL,sfx_s3kb7);
 
 				ifselectvalnextmap(lscol) else ifselectvalnextmap(0)
 			}
 			else if (!lsoffs[1]) // prevent sound spam
 			{
-				lsoffs[1] = -8 * FRACUNIT;
+				lsoffs[1] = -8;
 				S_StartSound(NULL,sfx_s3kb7);
 			}
 			break;
@@ -6041,7 +6041,7 @@ static void M_DrawRecordAttackForeground(void)
 
 	for (i = -12; i < (BASEVIDHEIGHT/height) + 12; i++)
 	{
-		INT32 y = ((i*height) - (height - ((FixedInt(recatkdrawtimer*2))%height)));
+		INT32 y = ((i*height) - (height - ((recatkdrawtimer*2)%height)));
 		// don't draw above the screen
 		{
 			INT32 sy = FixedMul(y, dupz<<FRACBITS) >> FRACBITS;
@@ -6058,7 +6058,7 @@ static void M_DrawRecordAttackForeground(void)
 	}
 
 	// draw clock
-	fa = (FixedAngle(((FixedInt(recatkdrawtimer * 4)) % 360)<<FRACBITS)>>ANGLETOFINESHIFT) & FINEMASK;
+	fa = (FixedAngle(((recatkdrawtimer * 4) % 360)<<FRACBITS)>>ANGLETOFINESHIFT) & FINEMASK;
 	V_DrawSciencePatch(160<<FRACBITS, (80<<FRACBITS) + (4*FINESINE(fa)), 0, clock, FRACUNIT);
 
 	// Increment timer.
