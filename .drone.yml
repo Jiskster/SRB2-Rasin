@@ -49,7 +49,7 @@ steps:
   image: archlinux/archlinux:base-devel
   pull: if-not-exists
   commands:
-  - pacman -Syu libgme libopenmpt libpng sdl2_mixer glu mesa nasm upx git mingw-w64-binutils mingw-w64-crt mingw-w64-gcc mingw-w64-headers mingw-w64-winpthreads --noconfirm
+  - pacman -Syu nasm upx git mingw-w64-binutils mingw-w64-crt mingw-w64-gcc mingw-w64-headers mingw-w64-winpthreads --noconfirm
   - env PREFIX=i686-w64-mingw32 make -C src/ NOUPX=1 MINGW=1 EXENAME=srb2win_netplus.exe -j $(grep -c processor /proc/cpuinfo)
   - make clean
   - rm make -rf
@@ -58,13 +58,25 @@ steps:
 - name: publish
   image: vividboarder/drone-webdav
   settings:
-    file: {bin/srb2win_netplus_discordrpc.exe,bin/srb2win_netplus.exe}
+    file: bin/srb2win_netplus.exe
     destination:
       from_secret: upload_destination_windowsx86
     username:
       from_secret: webdav_username
     password:
       from_secret: webdav_password
+
+- name: publish_discordrpc
+  image: vividboarder/drone-webdav
+  settings:
+    file: bin/srb2win_netplus_discordrpc.exe
+    destination:
+      from_secret: upload_destination_windowsx64
+    username:
+      from_secret: webdav_username
+    password:
+      from_secret: webdav_password
+
 
 ---
 
@@ -82,7 +94,7 @@ steps:
   image: archlinux/archlinux:base-devel
   pull: if-not-exists
   commands:
-  - pacman -Syu libgme libopenmpt libpng sdl2_mixer glu mesa nasm upx git mingw-w64-binutils mingw-w64-crt mingw-w64-gcc mingw-w64-headers mingw-w64-winpthreads --noconfirm
+  - pacman -Syu nasm upx git mingw-w64-binutils mingw-w64-crt mingw-w64-gcc mingw-w64-headers mingw-w64-winpthreads --noconfirm
   - env PREFIX=x86_64-w64-mingw32 make -C src/ MINGW64=1 NOUPX=1 EXENAME=srb2win_x64_netplus.exe -j $(grep -c processor /proc/cpuinfo)
   - make clean
   - rm make -rf
@@ -91,7 +103,7 @@ steps:
 - name: publish
   image: vividboarder/drone-webdav
   settings:
-    file: {bin/srb2win_x64_netplus_discordrpc.exe,bin/srb2win_x64_netplus.exe}
+    file: bin/srb2win_x64_netplus.exe
     destination:
       from_secret: upload_destination_windowsx64
     username:
@@ -99,3 +111,13 @@ steps:
     password:
       from_secret: webdav_password
 
+- name: publish_discordrpc
+  image: vividboarder/drone-webdav
+  settings:
+    file: bin/srb2win_x64_netplus_discordrpc.exe
+    destination:
+      from_secret: upload_destination_windowsx64
+    username:
+      from_secret: webdav_username
+    password:
+      from_secret: webdav_password
