@@ -3024,6 +3024,8 @@ static void P_CheckInvincibilityTimer(player_t *player)
 	{
 		mobj_t *sparkle = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_IVSP);
 		sparkle->destscale = player->mo->scale;
+		if (cv_playerfullbright.value)
+			sparkle->frame |= FF_FULLBRIGHT;
 		P_SetScale(sparkle, player->mo->scale);
 	}
 
