@@ -116,6 +116,9 @@ thinker_t* mobjnum_ht_linkedList_Find (uint32_t mobjnumber)
     mobjnum_linkedList* currentEntry; // = &mobjnum_Hashtable[(UINT8)(mobj->mobjnum % HT_NUMLISTS)];
     mobjnum_linkedList* next;
 
+    if (!mobjnumber)
+        return NULL;
+
     currentEntry = &mobjnum_Hashtable[(UINT8)(mobjnumber % HT_NUMLISTS)];
 
     if (!currentEntry->next) // check for the first entry
