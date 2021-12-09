@@ -2022,6 +2022,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		WRITEFIXED(save_p, mobj->momy);
 		WRITEFIXED(save_p, mobj->momz);
 	}
+	WRITEFIXED(save_p, mobj->pmomz); //vanilla bug
 	if (diff & MD_RADIUS)
 		WRITEFIXED(save_p, mobj->radius);
 	if (diff & MD_HEIGHT)
@@ -2998,6 +2999,7 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 		mobj->momy = READFIXED(save_p);
 		mobj->momz = READFIXED(save_p);
 	} // otherwise they're zero, and the memset took care of it
+	mobj->pmomz = READFIXED(save_p); //vanilla bug
 
 	if (diff & MD_RADIUS)
 		mobj->radius = READFIXED(save_p);
