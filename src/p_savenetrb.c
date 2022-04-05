@@ -232,6 +232,19 @@ static void P_NetUnArchivePlayers(void)
 		WRITEUINT32(save_p, players[i].dashmode);
 		WRITEUINT32(save_p, players[i].skidtime);
 
+		//////////
+		// Bots //
+		//////////
+		WRITEUINT8(save_p, players[i].bot);
+		WRITEUINT8(save_p, players[i].botmem.lastForward);
+		WRITEUINT8(save_p, players[i].botmem.lastBlocked);
+		WRITEUINT8(save_p, players[i].botmem.catchup_tics);
+		WRITEUINT8(save_p, players[i].botmem.thinkstate);
+		WRITEUINT8(save_p, players[i].removing);
+		
+		WRITEUINT8(save_p, players[i].blocked);
+		WRITEUINT16(save_p, players[i].lastbuttons);
+
 		////////////////////////////
 		// Conveyor Belt Movement //
 		////////////////////////////
@@ -447,6 +460,20 @@ static void P_NetUnArchivePlayers(void)
 		players[i].homing = READUINT8(save_p); // Are you homing?
 		players[i].dashmode = READUINT32(save_p); // counter for dashmode ability
 		players[i].skidtime = READUINT32(save_p); // Skid timer
+
+		//////////
+		// Bots //
+		//////////
+		players[i].bot = READUINT8(save_p);
+		
+		players[i].botmem.lastForward = READUINT8(save_p);
+		players[i].botmem.lastBlocked = READUINT8(save_p);
+		players[i].botmem.catchup_tics = READUINT8(save_p);
+		players[i].botmem.thinkstate = READUINT8(save_p);
+		players[i].removing = READUINT8(save_p);
+
+		players[i].blocked = READUINT8(save_p);
+		players[i].lastbuttons = READUINT16(save_p);
 
 		////////////////////////////
 		// Conveyor Belt Movement //
@@ -5560,19 +5587,26 @@ static inline boolean P_UnArchiveLuabanksAndConsistency(void)
 {
 	switch (READUINT8(save_p))
 	{
-		case 0xb7:
+		case 0xb7: // luabanks marker
 			{
 				UINT8 i, banksinuse = READUINT8(save_p);
 				if (banksinuse > NUM_LUABANKS)
+				{
+					CONS_Alert(CONS_ERROR, M_GetText("Corrupt Luabanks! (Too many banks in use)\n"));
 					return false;
+				}
 				for (i = 0; i < banksinuse; i++)
 					luabanks[i] = READINT32(save_p);
-				if (READUINT8(save_p) != 0x1d)
+				if (READUINT8(save_p) != 0x1d) // consistency marker
+				{
+					CONS_Alert(CONS_ERROR, M_GetText("Corrupt Luabanks! (Failed consistency check)\n"));
 					return false;
+				}
 			}
-		case 0x1d:
+		case 0x1d: // consistency marker
 			break;
-		default:
+		default: // anything else is nonsense
+			CONS_Alert(CONS_ERROR, M_GetText("Failed consistency check (???)\n"));
 			return false;
 	}
 

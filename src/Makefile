@@ -2,8 +2,8 @@
 # the poly3 Makefile adapted over and over...
 #
 # Copyright 1998-2000 DooM Legacy Team.
-# Copyright 2020-2021 James R.
-# Copyright 2003-2021 Sonic Team Junior.
+# Copyright 2020-2022 James R.
+# Copyright 2003-2022 Sonic Team Junior.
 #
 # This program is free software distributed under the
 # terms of the GNU General Public License, version 2.
@@ -379,7 +379,7 @@ ifdef Echo_name
 	@printf '%-20.20s\r' $$<
 endif
 endif
-	$(.)$(cc) -MM -MF $$@ -MT $(objdir)/$$(*F).o $(2) $$<
+	$(.)$(cc) -MM -MF $$@ -MT $(objdir)/$$*.o $(2) $$<
 endef
 
 $(eval $(call _recipe,c))
