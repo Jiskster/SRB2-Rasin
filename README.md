@@ -1,3 +1,5 @@
+[![Please Don't ship WIP](https://img.shields.io/badge/Please-Don't%20Ship%20WIP-yellow)](https://dont-ship.it/)
+
 # Sonic Robo Blast 2 NetPlus - Rollback Netcode mod
 [![Build Status](https://droneci.netplus.friskyfox.art/api/badges/NetPlus/netplus/status.svg)](https://droneci.netplus.friskyfox.art/NetPlus/netplus)
 
