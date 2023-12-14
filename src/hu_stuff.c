@@ -3040,10 +3040,15 @@ void HU_SetCEchoFlags(INT32 flags)
 
 void HU_DoCEcho(const char *msg)
 {
-	I_OutputMsg("%s\n", msg); // print to log
+	if (!con_muted)
+	{
+		I_OutputMsg("%s\n", msg); // print to log
 
-	strncpy(cechotext, msg, sizeof(cechotext));
-	strncat(cechotext, "\\", sizeof(cechotext) - strlen(cechotext) - 1);
-	cechotext[sizeof(cechotext) - 1] = '\0';
-	cechotimer = cechoduration;
+		strncpy(cechotext, msg, sizeof(cechotext));
+		strncat(cechotext, "\\", sizeof(cechotext) - strlen(cechotext) - 1);
+		cechotext[sizeof(cechotext) - 1] = '\0';
+		cechotimer = cechoduration;
+	}
+	else
+		DEBFILE(va("%s\n", msg));
 }

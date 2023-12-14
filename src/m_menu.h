@@ -119,6 +119,9 @@ typedef enum
 	MN_SR_PLAYER,
 	MN_SR_SOUNDTEST,
 
+	//Netplus options menu
+	MN_OP_NETPLUS,
+
 	// Addons (Part of MISC, but let's make it our own)
 	MN_AD_MAIN,
 
@@ -135,6 +138,8 @@ typedef enum
 	// MN_HELP,
 
 	MN_SPECIAL,
+	MN_DISCORD_RQ,
+	MN_DISCORD_OPT,
 	NUMMENUTYPES,
 } menutype_t; // up to 63; MN_SPECIAL = 53
 #define MTREE2(a,b) (a | (b<<MENUBITS))

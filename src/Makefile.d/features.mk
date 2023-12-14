@@ -39,7 +39,7 @@ $(eval $(call Configure,PNG,$(PNG_CONFIG) \
 	$(if $(PNG_STATIC),--static),,--ldflags))
 endif
 ifdef LINUX
-opts+=-D_LARGFILE64_SOURCE
+opts+=-D_LARGEFILE64_SOURCE
 endif
 opts+=-DHAVE_PNG
 sources+=apng.c
@@ -56,6 +56,12 @@ endif
 
 ifdef HAVE_MINIUPNPC
 libs+=-lminiupnpc
+endif
+
+ifdef HAVE_DISCORDRPC
+libs+=-ldiscord-rpc
+opts+=-DHAVE_DISCORDRPC -DUSE_STUN
+sources+=discord.c stun.c
 endif
 
 # (Valgrind is a memory debugger.)

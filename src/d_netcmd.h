@@ -17,6 +17,8 @@
 
 #include "command.h"
 
+void Command_Autotimefudge(void);
+
 // console vars
 extern consvar_t cv_playername;
 extern consvar_t cv_playercolor;
@@ -73,6 +75,7 @@ extern consvar_t cv_teamscramble;
 extern consvar_t cv_scrambleonchange;
 
 extern consvar_t cv_netstat;
+extern consvar_t cv_netsimstat;
 extern consvar_t cv_nettimeout;
 
 extern consvar_t cv_countdowntime;
@@ -105,6 +108,25 @@ extern consvar_t cv_maxping;
 extern consvar_t cv_pingtimeout;
 extern consvar_t cv_showping;
 
+extern consvar_t cv_simulate;
+extern consvar_t cv_simulatetics;
+extern consvar_t cv_simmisstics;
+extern consvar_t cv_jittersmoothing;
+extern consvar_t cv_simulateculldistance;
+extern consvar_t cv_siminaccuracy;
+extern consvar_t cv_netdelay;
+extern consvar_t cv_netjitter;
+extern consvar_t cv_netsmoothing;
+extern consvar_t cv_netspikes;
+extern consvar_t cv_netsteadyplayers;
+extern consvar_t cv_debugsimulaterewind;
+extern consvar_t cv_timefudge;
+extern consvar_t cv_autoupdatetimefudge;
+extern consvar_t cv_nettrails;
+extern consvar_t cv_netslingdelay;
+extern consvar_t cv_netvariabletime;
+
+extern consvar_t cv_playerfullbright;
 
 extern consvar_t cv_skipmapcheck;
 
@@ -147,6 +169,7 @@ typedef enum
 	XD_LUACMD,      // 22
 	XD_LUAVAR,      // 23
 	XD_LUAFILE,     // 24
+	XD_DISCORD,     // 25
 	MAXNETXCMD
 } netxcmd_t;
 

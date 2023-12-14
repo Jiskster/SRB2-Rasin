@@ -60,6 +60,7 @@ static boolean con_started = false; // console has been initialised
        boolean con_refresh = false; // screen needs refreshing
 static boolean con_forcepic = true; // at startup toggle console translucency when first off
        boolean con_recalc;          // set true when screen size has changed
+	   boolean con_muted = false;   // mutes the console (terminal output still produces output)
 
 static tic_t con_tick; // console ticker for anim or blinking prompt cursor
                         // con_scrollup should use time (currenttime - lasttime)..
@@ -1347,7 +1348,7 @@ static void CON_Print(char *msg)
 	INT32 controlchars = 0; // for color changing
 	char color = '\x80';  // keep color across lines
 
-	if (msg == NULL)
+	if (msg == NULL || con_muted)
 		return;
 
 	if (*msg == '\3') // chat text, makes ding sound
@@ -1485,6 +1486,10 @@ void CONS_Printf(const char *fmt, ...)
 
 	// echo console prints to log file
 	DEBFILE(txt);
+
+	//also mute the console in terminal/command line AND file, except for DEBFILE above
+	if (con_muted)
+		return;
 
 	// write message in con text buffer
 	if (con_started)

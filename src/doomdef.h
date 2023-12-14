@@ -124,6 +124,12 @@ extern char logfilename[1024];
 /* A mod name to further distinguish versions. */
 #define SRB2APPLICATION "SRB2"
 
+// uncapped ver
+#define UNCAPPEDVERSION "1.0"
+
+// Netplus version
+#define NETPLUSVERSION "Bleeding Edge Build"
+
 //#define DEVELOP // Disable this for release builds to remove excessive cheat commands and enable MD5 checking and stuff, all in one go. :3
 #ifdef DEVELOP
 #define VERSIONSTRING "Development EXE"
@@ -135,6 +141,11 @@ extern char logfilename[1024];
 #ifdef BETAVERSION
 #define VERSIONSTRING "v"SRB2VERSION" "BETAVERSION
 #define VERSIONSTRING_RC SRB2VERSION " " BETAVERSION "\0"
+#elif defined (UNCAPPEDVERSION)
+// #define VERSIONSTRING "v"SRB2VERSION" (Uncapped v"UNCAPPEDVERSION" NetPLUS v"NETPLUSVERSION")"
+// #define VERSIONSTRING_RC SRB2VERSION " (UCNetPLUS v"NETPLUSVERSION" "NETPLUSCOMMIT")\0"
+#define VERSIONSTRING "v"SRB2VERSION" (NetPLUS "NETPLUSVERSION")"
+#define VERSIONSTRING_RC SRB2VERSION " (NetPLUS "NETPLUSVERSION")\0"
 #else
 #define VERSIONSTRING "v"SRB2VERSION
 #define VERSIONSTRING_RC SRB2VERSION "\0"

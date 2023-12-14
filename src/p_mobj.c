@@ -42,6 +42,14 @@ actioncache_t actioncachehead;
 
 static mobj_t *overlaycap = NULL;
 
+UINT32 globalmobjnum = 0; // this should never overflow, but 4 billion would be an impressive number to reach. \todo ensure this never happens
+
+boolean P_IsProjectile(mobjtype_t type)
+{
+	return type == MT_THROWNBOUNCE || type == MT_THROWNINFINITY || type == MT_THROWNAUTOMATIC || type == MT_THROWNSCATTER
+		|| type == MT_THROWNEXPLOSION || type == MT_THROWNGRENADE || type == MT_REDRING;
+}
+
 void P_InitCachedActions(void)
 {
 	actioncachehead.prev = actioncachehead.next = &actioncachehead;
@@ -237,6 +245,10 @@ boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state)
 		player->powers[pw_flashing] = flashingtics-1;
 		P_DoPityCheck(player);
 	}
+
+	// Full birght players in Match/CTF/Modded GTs
+	if (cv_playerfullbright.value && !(G_PlatformGametype()) && !(G_TagGametype()))
+		mobj->frame |= FF_FULLBRIGHT;
 
 	// Set animation state
 	// The pflags version of this was just as convoluted.
@@ -488,6 +500,10 @@ boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state)
 
 		state = st->nextstate;
 	} while (!mobj->tics && !seenstate[state]);
+
+	// Full birght players in Match/CTF/Modded GTs
+	if (cv_playerfullbright.value && !(G_PlatformGametype()) && !(G_TagGametype()))
+		mobj->frame |= FF_FULLBRIGHT;
 
 	if (!mobj->tics)
 		CONS_Alert(CONS_WARNING, M_GetText("State cycle detected, exiting.\n"));
@@ -10496,6 +10512,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	mobj->thinker.function.acp1 = (actionf_p1)P_MobjThinker;
 	mobj->type = type;
 	mobj->info = info;
+	mobj->localmobjnum = globalmobjnum++;
 
 	mobj->x = x;
 	mobj->y = y;
@@ -11080,7 +11097,7 @@ void P_RemovePrecipMobj(precipmobj_t *mobj)
 }
 
 // Clearing out stuff for savegames
-void P_RemoveSavegameMobj(mobj_t *mobj)
+void P_RemoveSavegameMobj(mobj_t *mobj, boolean preserveLevel)
 {
 	// unlink from sector and block lists
 	P_UnsetThingPosition(mobj);
@@ -11093,7 +11110,10 @@ void P_RemoveSavegameMobj(mobj_t *mobj)
 	}
 
 	// stop any playing sound
-	S_StopSound(mobj);
+	if (!preserveLevel)
+	{
+		S_StopSound(mobj);
+	}
 
 	// free block
 	P_RemoveThinker((thinker_t *)mobj);
@@ -12652,6 +12672,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 			skyboxcenterpnts[tag] = mobj;
 		else
 			skyboxviewpnts[tag] = mobj;
+		//TODO: mobj->extravalue2 = (mthing->extrainfo & 0xFFFF) | ((mthing->options & MTF_OBJECTSPECIAL) != 0); // needed for reloading map objs
 		break;
 	}
 	case MT_EGGSTATUE:
@@ -13882,6 +13903,13 @@ mobj_t *P_SPMAngle(mobj_t *source, mobjtype_t type, angle_t angle, UINT8 allowai
 		z = source->z + source->height/3;
 
 	th = P_SpawnMobj(x, y, z, type);
+
+	if (cv_netslingdelay.value && issimulation && (tic_t)cv_netsteadyplayers.value >= targetsimtic - simtic && source == players[consoleplayer].mo)
+	{
+		z = 0x80000000; // don't make rings appear when using netslingdelay, teleport them somewhere else
+		th->flags |= MF_NOTHINK;
+		th->sprite = SPR_NULL;
+	}
 
 	if (source->eflags & MFE_VERTICALFLIP)
 		th->flags2 |= MF2_OBJECTFLIP;

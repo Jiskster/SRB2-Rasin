@@ -23,6 +23,10 @@
 #include "m_menu.h"
 #include "z_zone.h"
 
+#ifdef HAVE_DISCORDRPC
+#include "discord.h"
+#endif
+
 #ifdef MASTERSERVER
 
 static int     MSId;
@@ -64,7 +68,7 @@ static CV_PossibleValue_t masterserver_update_rate_cons_t[] = {
 consvar_t cv_masterserver = CVAR_INIT ("masterserver", "https://mb.srb2.org/MS/0", CV_SAVE|CV_CALL, NULL, MasterServer_OnChange);
 consvar_t cv_servername = CVAR_INIT ("servername", "SRB2 server", CV_SAVE|CV_NETVAR|CV_CALL|CV_NOINIT, NULL, Update_parameters);
 
-consvar_t cv_masterserver_update_rate = CVAR_INIT ("masterserver_update_rate", "15", CV_SAVE|CV_CALL|CV_NOINIT, masterserver_update_rate_cons_t, Update_parameters);
+consvar_t cv_masterserver_update_rate = CVAR_INIT ("masterserver_update_rate", "5", CV_SAVE|CV_CALL|CV_NOINIT, masterserver_update_rate_cons_t, Update_parameters);
 
 INT16 ms_RoomId = -1;
 
@@ -267,6 +271,10 @@ Finish_update (void)
 
 	if (! done)
 		Finish_update();
+#ifdef HAVE_DISCORDRPC
+	else
+		DRPC_UpdatePresence();
+#endif
 }
 
 static void

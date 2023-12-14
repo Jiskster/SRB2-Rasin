@@ -25,6 +25,8 @@
 */
 #define MAX_QUIT_FUNCS     16
 
+extern double tic_frequency;
+extern double elapsed;
 
 /**	\brief Graphic system had started up
 */
@@ -45,6 +47,19 @@ UINT32 I_GetFreeMem(UINT32 *total);
 /**	\brief  Called by D_SRB2Loop, returns current time in tics.
 */
 tic_t I_GetTime(void);
+
+/** \brief Gets the current time in microseconds
+*/
+UINT64 I_GetTimeUs(void);
+
+/** \brief Sets the current time in tics, with a fudge between 0-100 indicating progress towards the next tic
+
+		   This is used for better synchronisation in netgames.
+		   If absolute fudge is true, the time fudge is relative to the system startup. e.g. two SRB2 applications with a time fudge of 0 will update at the same times
+		   If absolute fudge is false, the time fudge is relative to the time at call. e.g. if tic is set to the current tic and fudge 50, it'll be half a tic until the next tic
+		   Time is never allowed to go backwards--this can cause a freeze. If the possibility of time going backwards is detected, the time will be clamped.
+*/
+void I_SetTime(tic_t tic, int fudge, boolean useAbsoluteFudge);
 
 /**	\brief	Returns precise time value for performance measurement.
   */

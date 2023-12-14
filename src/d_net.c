@@ -1131,6 +1131,9 @@ boolean HGetPacket(void)
 		if (doomcom->remotenode == -1) // No packet received
 			return false;
 
+		if (cv_autoupdatetimefudge.value)
+			TimeFudge();
+
 		getbytes += packetheaderlength + doomcom->datalength; // For stat
 
 		if (doomcom->remotenode >= MAXNETNODES)
@@ -1185,6 +1188,85 @@ boolean HGetPacket(void)
 #endif // ndef NONET
 
 	return true;
+}
+
+static UINT64 packetTimeFudge[512];
+static int numReceivedPackets = 0;
+static UINT64 lastFudgingTime = 0;
+extern int netUpdateFudge;
+
+void TimeFudge(void)
+{
+	UINT64 startTime = I_GetTimeUs();
+	int numSampleTics = 32;
+	int i;
+
+	if (lastFudgingTime == 0)
+		lastFudgingTime = I_GetTimeUs();
+	
+	if (server)
+		if (netgame)
+			return;
+	// CONS_Printf("Last time fudge: %i%%\n", cv_timefudge.value);
+		// I_NetGet();
+	if (doomcom->remotenode != -1 && I_GetTimeUs() - lastFudgingTime > (unsigned long long)2*1000000/NEWTICRATE) // wait a couple frames before recording
+	{
+		unsigned long long frame = I_GetTimeUs() * NEWTICRATE / 1000000;
+		packetTimeFudge[numReceivedPackets] = (I_GetTimeUs() - frame * 1000000 / NEWTICRATE) * 100 * NEWTICRATE / 1000000
+			- netUpdateFudge; // gets the time fudge offset (0-100)
+		numReceivedPackets++;
+	}
+
+	// while (I_GetTimeUs() - startTime < ((UINT64)numSampleTics * 1000000 / NEWTICRATE))
+	// {
+	// 	// I_NetGet();
+	// 	if (doomcom->remotenode != -1 && I_GetTimeUs() - startTime > (unsigned long long)2*1000000/NEWTICRATE) // wait a couple frames before recording
+	// 	{
+	// 		unsigned long long frame = I_GetTimeUs() * NEWTICRATE / 1000000;
+	// 		packetTimeFudge[numReceivedPackets++] = (I_GetTimeUs() - frame * 1000000 / NEWTICRATE) * 100 * NEWTICRATE / 1000000
+	// 			- netUpdateFudge; // gets the time fudge offset (0-100)
+	// 	}
+	// }
+
+	if (numReceivedPackets >= numSampleTics)
+	{
+		int minOffset = 100, maxOffset = 0, averageOffset = 0;
+		int newTimeFudge;
+		int estimatedRange;
+
+		for (i = 0; i < numReceivedPackets; i++)
+		{
+			minOffset = min(minOffset, packetTimeFudge[i]);
+			maxOffset = max(maxOffset, packetTimeFudge[i]);
+		}
+
+		if (maxOffset - minOffset > 50)
+		{
+			// say maxOffset = 90 and minOffset = 20, we want the average to be 30...
+			maxOffset = maxOffset - 100;
+
+			if (minOffset > maxOffset)
+			{
+				int swap = maxOffset;
+				maxOffset = minOffset;
+				minOffset = swap;
+			}
+		}
+		
+		numReceivedPackets = 0;
+		lastFudgingTime = I_GetTimeUs();
+
+		// estimatedRange = maxOffset - minOffset;
+		averageOffset = (maxOffset + minOffset) / 2;
+
+		// CONS_Printf("%i packets, min: %d max: %d avg: %d est. range: %d (mynetupdate: %i)\n", numReceivedPackets, minOffset, maxOffset, averageOffset,
+		// 	estimatedRange, netUpdateFudge);
+
+		newTimeFudge = (cv_timefudge.value + averageOffset + 50) % 100;
+		// CONS_Printf("New time fudge: %i%%\n", newTimeFudge);
+		if (rttJitter > 0)
+			CV_SetValue(&cv_timefudge, newTimeFudge);
+	}
 }
 
 static boolean Internal_Get(void)

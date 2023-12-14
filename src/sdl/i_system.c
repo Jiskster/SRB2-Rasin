@@ -105,7 +105,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #if defined (__unix__) || (defined (UNIXCOMMON) && !defined (__APPLE__))
 #include <errno.h>
 #include <sys/wait.h>
-#define NEWSIGNALHANDLER
+//#define NEWSIGNALHANDLER
 #endif
 
 #ifndef NOMUMBLE
@@ -2140,21 +2140,70 @@ ticcmd_t *I_BaseTiccmd2(void)
 // returns time in 1/TICRATE second tics
 //
 
+/*
+void I_StartupTimer(void)
+{
+	timer_frequency = SDL_GetPerformanceFrequency();
+	tic_epoch       = SDL_GetPerformanceCounter();
+
+	tic_frequency   = timer_frequency / (double)NEWTICRATE;
+}
+*/
+
 static Uint64 timer_frequency;
 
-static double tic_frequency;
+double tic_frequency;
 static Uint64 tic_epoch;
+
+int8_t lastTimeFudge = 0;
+double elapsed;
 
 tic_t I_GetTime(void)
 {
-	static double elapsed;
+	// static double elapsed; //basetime in the old code
 
-	const Uint64 now = SDL_GetPerformanceCounter();
+	const Uint64 now = SDL_GetPerformanceCounter(); //ticks in old code
+
+	//LXShadow's comment:
+	/* If the server and client are using different timer types, this will cause jutter.
+	It also messes with SRB2netplus's timer fudge, meaning that for a truly accurate timerfudge it needs to know which timer the server is using...
+	Fudge the timer to sync better with online games. Uses multiply-first approach (more accurate)*/
+
+	// fudge the timer for better netgame sync
+	if (cv_timefudge.value != lastTimeFudge)
+	{
+		if (!elapsed)
+			elapsed = now;
+
+		if (cv_timefudge.value > lastTimeFudge)
+		{
+			elapsed--; // do not allow the same tic to play twice
+		}
+
+		elapsed = (double)(elapsed + cv_timefudge.value / 100);
+		// 100 is just to get a float number from 0 to 1 by dividing timefudge/100
+		// this probably allows to move the time in slight steps
+		// knowing that "elapsed" is a FP value, this makes sense.
+		// jitters happen when we are not "even" with timers within 0..1 (and also depending on latency)
+
+		lastTimeFudge = cv_timefudge.value;
+	}
 
 	elapsed += (now - tic_epoch) / tic_frequency;
 	tic_epoch = now; // moving epoch
 
 	return (tic_t)elapsed;
+}
+
+//
+// I_GetTimeUs
+// returns time in 1/TICRATE second tics
+// tells how much time elapsed in OUR machine only(?)
+//
+precise_t I_GetTimeUs(void) 
+{
+	return (SDL_GetPerformanceCounter()/ tic_frequency - elapsed);
+	// return 0;
 }
 
 precise_t I_GetPreciseTime(void)
@@ -2172,6 +2221,39 @@ int I_PreciseToMicros(precise_t d)
 	// which is undefined behaviour when converting floating point values to integers.
 	return (int)(UINT64)(d / (timer_frequency / 1000000.0));
 }
+
+//
+// I_SetTime
+// Sets the time, used to fudge timers for better network synching
+//
+// static unsigned int starttickcount = 0;
+void I_SetTime(tic_t tic, int fudge, boolean useAbsoluteFudge)
+{
+	//
+	// unsigned int oldTickCount = starttickcount;
+	// int64_t oldBaseTime = basetime;
+
+	
+
+	// if (starttickcount)
+	// {
+	// 	starttickcount = SDL_GetTicks() - (unsigned int)((UINT64)tic * 1000 / NEWTICRATE + 1000 * fudge / TICRATE / 100);
+	// 	if (useAbsoluteFudge)
+	// 	{
+	// 		starttickcount = starttickcount * NEWTICRATE / 1000 * 1000 * NEWTICRATE + 1000 * fudge / NEWTICRATE / 100;
+	// 	}
+	// }
+	tic = max(tic, SDL_GetTicks());
+
+	// const Uint64 currtime = SDL_GetPerformanceCounter();
+	// elapsed = currtime - (tic * tic_frequency + (fudge / 100) * tic_frequency);
+
+	if (useAbsoluteFudge)
+		elapsed = elapsed + (fudge / 100) * tic_frequency;
+	// return;
+	
+}
+
 
 //
 //I_StartupTimer

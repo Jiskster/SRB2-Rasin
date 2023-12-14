@@ -81,6 +81,11 @@
 #define FIXUPO0
 #endif
 
+#ifdef HAVE_DISCORDRPC
+//#include "discord_rpc.h"
+#include "discord.h"
+#endif
+
 #define SKULLXOFF -32
 #define LINEHEIGHT 16
 #define STRINGHEIGHT 8
@@ -200,6 +205,12 @@ static void M_RoomMenu(INT32 choice);
 
 // the haxor message menu
 menu_t MessageDef;
+
+#ifdef HAVE_DISCORDRPC
+menu_t MISC_DiscordRequestsDef;
+static void M_HandleDiscordRequests(INT32 choice);
+static void M_DrawDiscordRequests(void);
+#endif
 
 menu_t SPauseDef;
 
@@ -338,6 +349,9 @@ menu_t OP_SoundAdvancedDef;
 //Misc
 menu_t OP_DataOptionsDef, OP_ScreenshotOptionsDef, OP_EraseDataDef;
 menu_t OP_ServerOptionsDef;
+#ifdef HAVE_DISCORDRPC
+menu_t OP_DiscordOptionsDef;
+#endif
 menu_t OP_MonitorToggleDef;
 static void M_ScreenshotOptions(INT32 choice);
 static void M_SetupScreenshotMenu(void);
@@ -346,6 +360,9 @@ static void M_EraseData(INT32 choice);
 static void M_Addons(INT32 choice);
 static void M_AddonsOptions(INT32 choice);
 static patch_t *addonsp[NUM_EXT+5];
+
+//NetPlus settings menu
+menu_t OP_NetPlusDef;
 
 #define addonmenusize 9 // number of items actually displayed in the addons menu view, formerly (2*numaddonsshown + 1)
 #define numaddonsshown 4 // number of items to each side of the currently selected item, unless at top/bottom ends of directory
@@ -387,6 +404,9 @@ static void M_DrawRoomMenu(void);
 static void M_DrawJoystick(void);
 static void M_DrawSetupMultiPlayerMenu(void);
 
+// NetPlus Options Menu for drawing network graphics
+static void M_NetPlusMenu(void);
+
 // Handling functions
 static boolean M_ExitPandorasBox(void);
 static boolean M_QuitMultiPlayerMenu(void);
@@ -405,7 +425,8 @@ static void M_HandleSetupMultiPlayer(INT32 choice);
 static void M_HandleVideoMode(INT32 choice);
 
 static void M_ResetCvars(void);
-
+//for NetPlus options menu 
+static void M_NetPlusAutoTimeFudge(void);
 // Consvar onchange functions
 static void Newgametype_OnChange(void);
 static void Dummymares_OnChange(void);
@@ -554,6 +575,10 @@ static menuitem_t MPauseMenu[] =
 	{IT_STRING | IT_SUBMENU, NULL, "Scramble Teams...",         &MISC_ScrambleTeamDef, 16},
 	{IT_STRING | IT_CALL,    NULL, "Switch Gametype/Level...",  M_MapChange,           24},
 
+	#ifdef HAVE_DISCORDRPC
+	{IT_STRING | IT_SUBMENU,  NULL, "Ask To Join Requests...", &MISC_DiscordRequestsDef, 24},
+	#endif
+
 	{IT_STRING | IT_CALL,    NULL, "Continue",                  M_SelectableClearMenus,40},
 	{IT_STRING | IT_CALL,    NULL, "Player 1 Setup",            M_SetupMultiPlayer,    48}, // splitscreen
 	{IT_STRING | IT_CALL,    NULL, "Player 2 Setup",            M_SetupMultiPlayer2,   56}, // splitscreen
@@ -573,6 +598,9 @@ typedef enum
 	mpause_addons = 0,
 	mpause_scramble,
 	mpause_switchmap,
+#ifdef HAVE_DISCORDRPC
+	mpause_discordrequests,
+#endif
 
 	mpause_continue,
 	mpause_psetupsplit,
@@ -618,6 +646,13 @@ typedef enum
 	spause_title,
 	spause_quit
 } spause_e;
+
+#ifdef HAVE_DISCORDRPC
+static menuitem_t MISC_DiscordRequestsMenu[] =
+{
+	{IT_KEYHANDLER|IT_NOTHING, NULL, "", M_HandleDiscordRequests, 0},
+};
+#endif
 
 // -----------------
 // Misc menu options
@@ -1074,8 +1109,9 @@ static menuitem_t OP_MainMenu[] =
 	{IT_SUBMENU | IT_STRING, NULL, "Sound Options...",     &OP_SoundOptionsDef, 60},
 
 	{IT_CALL    | IT_STRING, NULL, "Server Options...",    M_ServerOptions,     80},
+	{IT_STRING  |IT_SUBMENU, NULL, "NetPlus Options...",   &OP_NetPlusDef,      90},
 
-	{IT_SUBMENU | IT_STRING, NULL, "Data Options...",      &OP_DataOptionsDef, 100},
+	{IT_SUBMENU | IT_STRING, NULL, "Data Options...",      &OP_DataOptionsDef, 110},
 };
 
 static menuitem_t OP_P1ControlsMenu[] =
@@ -1533,8 +1569,13 @@ static menuitem_t OP_DataOptionsMenu[] =
 {
 	{IT_STRING | IT_CALL,    NULL, "Add-on Options...",     M_AddonsOptions,     10},
 	{IT_STRING | IT_CALL,    NULL, "Screenshot Options...", M_ScreenshotOptions, 20},
+#ifdef HAVE_DISCORDRPC
+	{IT_STRING | IT_SUBMENU, NULL, "Discord Options...",	&OP_DiscordOptionsDef,	 40},
 
-	{IT_STRING | IT_SUBMENU, NULL, "\x85" "Erase Data...",  &OP_EraseDataDef,    40},
+	{IT_STRING | IT_SUBMENU, NULL, "\x85" "Erase Data...",	&OP_EraseDataDef,		 60},
+#else
+	{IT_STRING | IT_SUBMENU, NULL, "\x85" "Erase Data...",	&OP_EraseDataDef,		 50},
+#endif
 };
 
 static menuitem_t OP_ScreenshotOptionsMenu[] =
@@ -1604,6 +1645,20 @@ enum
 {
 	op_addons_folder = 2,
 };
+
+#ifdef HAVE_DISCORDRPC
+static menuitem_t OP_DiscordOptionsMenu[] =
+{
+	{IT_STRING | IT_CVAR,		NULL, "Rich Presence",			&cv_discordrp,			 10},
+
+	{IT_HEADER,					NULL, "Rich Presence Settings",	NULL,					 30},
+	{IT_STRING | IT_CVAR,		NULL, "Streamer Mode",			&cv_discordstreamer,	 40},
+
+	{IT_STRING | IT_CVAR,		NULL, "Allow Ask To Join",		&cv_discordasks,		 60},
+	{IT_STRING | IT_CVAR,		NULL, "Allow Invites",			&cv_discordinvites,		 70},
+	{IT_STRING | IT_CVAR,		NULL, "Show Character on Status",	&cv_discordshowchar,		 80},
+};
+#endif
 
 static menuitem_t OP_ServerOptionsMenu[] =
 {
@@ -1683,6 +1738,34 @@ static menuitem_t OP_MonitorToggleMenu[] =
 	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Eggman Box",        &cv_eggmanbox,    140},
 };
 
+//NetPlus options menu
+static menuitem_t OP_NetPlusOptionsMenu[] =
+{
+	{IT_HEADER, NULL, "Client Side Prediction", NULL, 0},
+	{IT_CVAR | IT_STRING, NULL, "Enable prediction", &cv_simulate,   6}, //sim
+	{IT_CVAR | IT_STRING, NULL, "Cancelled control lag tics", &cv_simulatetics,   11}, //simtics
+	{IT_CVAR | IT_STRING, NULL, "Jitter smoothing", &cv_jittersmoothing,   16}, //simtics
+	{IT_CVAR | IT_STRING, NULL, "Player jitter reduction tics",     &cv_netsteadyplayers,   21}, //simsteadyplayers
+	{IT_CVAR | IT_STRING, NULL, "Turn off ring toss prediction",     &cv_netslingdelay,   26}, //simslingdelay
+	{IT_CVAR | IT_STRING, NULL, "Objects prediction distance",     &cv_simulateculldistance, 31}, //simcull
+	// {IT_CVAR | IT_STRING, NULL, "Prediction inaccuracy (beta)",     &cv_siminaccuracy, 31}, //siminaccuracy
+	{IT_CVAR | IT_STRING, NULL, "Predict missed tics",     &cv_simmisstics, 36}, //siminaccuracy
+	// simmisstics
+
+	{IT_HEADER, NULL, "Visuals", NULL, 46},
+	{IT_CVAR | IT_STRING, NULL, "Player trail lifetime",     &cv_nettrails,      51}, //simtrails
+	{IT_CVAR | IT_STRING, NULL, "Players always bright",     &cv_playerfullbright,      56}, //playerfullbright
+
+	{IT_HEADER, NULL, "Server and client timers synch", NULL, 66},
+	// {IT_CVAR | IT_STRING, NULL, "Enable auto time fudging",    M_NetPlusAutoTimeFudge,   130}, //autotimefudge
+	// {IT_CALL | IT_STRING, NULL, "Force reducing game jitter",    M_NetPlusAutoTimeFudge,   130}, //autotimefudge
+	{IT_CVAR | IT_STRING, NULL, "Automatically sync timers", &cv_autoupdatetimefudge,   71}, //autoupdatetimefudge
+	{IT_CALL | IT_STRING, NULL, "Reduce game jitter manualy",    M_NetPlusAutoTimeFudge,   76}, //autotimefudge
+
+	{IT_HEADER, NULL, "Debug", NULL, 86},
+	{IT_CVAR | IT_STRING, NULL, "Simulation stats",      &cv_netsimstat, 91}, //netsimstat
+};
+
 // ==========================================================================
 // ALL MENU DEFINITIONS GO HERE
 // ==========================================================================
@@ -1726,6 +1809,20 @@ menu_t MISC_ChangeLevelDef =
 };
 
 menu_t MISC_HelpDef = IMAGEDEF(MISC_HelpMenu);
+
+#ifdef HAVE_DISCORDRPC
+menu_t MISC_DiscordRequestsDef = {
+    MN_DISCORD_RQ,
+	NULL,
+	sizeof (MISC_DiscordRequestsMenu)/sizeof (menuitem_t),
+	&MPauseDef,
+	MISC_DiscordRequestsMenu,
+	M_DrawDiscordRequests,
+	0, 0,
+	0,
+	NULL
+};
+#endif
 
 static INT32 highlightflags, recommendedflags, warningflags;
 
@@ -2267,6 +2364,18 @@ menu_t OP_AddonsOptionsDef = DEFAULTMENUSTYLE(
 menu_t OP_EraseDataDef = DEFAULTMENUSTYLE(
 	MTREE3(MN_OP_MAIN, MN_OP_DATA, MN_OP_ERASEDATA),
 	"M_DATA", OP_EraseDataMenu, &OP_DataOptionsDef, 60, 30);
+
+#ifdef HAVE_DISCORDRPC
+menu_t OP_DiscordOptionsDef = DEFAULTMENUSTYLE(MTREE3(MN_OP_MAIN, MN_OP_DATA, MN_DISCORD_OPT), NULL, OP_DiscordOptionsMenu, &OP_DataOptionsDef, 30, 30);
+#endif
+
+//Netplus options menu
+menu_t OP_NetPlusDef = DEFAULTSCROLLMENUSTYLE(
+    MTREE2(MN_OP_MAIN, MN_OP_NETPLUS),
+    "M_OPTTTL",
+    OP_NetPlusOptionsMenu,
+    &OP_MainDef,
+    30, 30);
 
 // ==========================================================================
 // CVAR ONCHANGE EVENTS GO HERE
@@ -3157,6 +3266,11 @@ static void M_ResetCvars(void)
 	}
 }
 
+static void M_NetPlusAutoTimeFudge(void)
+{
+	Command_Autotimefudge();
+}
+
 static void M_NextOpt(void)
 {
 	INT16 oldItemOn = itemOn; // prevent infinite loop
@@ -3733,6 +3847,11 @@ void M_StartControlPanel(void)
 		MPauseMenu[mpause_switchteam].status = IT_DISABLED;
 		MPauseMenu[mpause_psetup].status = IT_DISABLED;
 
+		// Reset these in case splitscreen messes things up
+		MPauseMenu[mpause_addons].alphaKey = 8;
+		MPauseMenu[mpause_scramble].alphaKey = 8;
+		MPauseMenu[mpause_switchmap].alphaKey = 24;
+
 		if ((server || IsPlayerAdmin(consoleplayer)))
 		{
 			MPauseMenu[mpause_switchmap].status = IT_STRING | IT_CALL;
@@ -3758,6 +3877,19 @@ void M_StartControlPanel(void)
 			else // in this odd case, we still want something to be on the menu even if it's useless
 				MPauseMenu[mpause_spectate].status = IT_GRAYEDOUT;
 		}
+
+#ifdef HAVE_DISCORDRPC
+		{
+			UINT8 i;
+
+			for (i = 0; i < mpause_discordrequests; i++)
+				MPauseMenu[i].alphaKey -= 8;
+
+			MPauseMenu[mpause_discordrequests].alphaKey = MPauseMenu[i].alphaKey;
+
+			M_RefreshPauseMenu();
+		}
+#endif
 
 		currentMenu = &MPauseDef;
 		itemOn = mpause_continue;
@@ -4683,6 +4815,196 @@ static void M_DrawGenericScrollMenu(void)
 		W_CachePatchName("M_CURSOR", PU_PATCH));
 }
 
+// note that alphakey is multiplied by 2 for scrolling menus to allow greater usage in UINT8 range.
+// accepts rectangle boundaries, the skull is not drawn if cursory is outside of boundaries
+// also accepts functions to draw header and footer. yay flexibiluty
+// works in menus where the menu has non-scrollable header and footer
+// first, it draws the header. then the scrollable menu
+// then the footer
+// the skull position must be shared across the header or footer or problems will occur!
+// static void M_DrawHeaderFooterScrollMenu_VariableSize(void header, void footer)
+// {
+// 	INT32 x, y, i, max, bottom, tempcentery, cursory = 0;
+
+// 	// DRAW MENU
+// 	x = currentMenu->x;
+// 	y = currentMenu->y;
+
+// 	if (currentMenu->menuitems[currentMenu->numitems-1].alphaKey < scrollareaheight)
+// 		tempcentery = currentMenu->y; // Not tall enough to scroll, but this thinker is used in case it becomes so
+// 	else if ((currentMenu->menuitems[itemOn].alphaKey*2 - currentMenu->menuitems[0].alphaKey*2) <= scrollareaheight)
+// 		tempcentery = currentMenu->y - currentMenu->menuitems[0].alphaKey*2;
+// 	else if ((currentMenu->menuitems[currentMenu->numitems-1].alphaKey*2 - currentMenu->menuitems[itemOn].alphaKey*2) <= scrollareaheight)
+// 		tempcentery = currentMenu->y - currentMenu->menuitems[currentMenu->numitems-1].alphaKey*2 + 2*scrollareaheight;
+// 	else
+// 		tempcentery = currentMenu->y - currentMenu->menuitems[itemOn].alphaKey*2 + scrollareaheight;
+
+// 	for (i = 0; i < currentMenu->numitems; i++)
+// 	{
+// 		if (currentMenu->menuitems[i].status != IT_DISABLED && currentMenu->menuitems[i].alphaKey*2 + tempcentery >= currentMenu->y)
+// 			break;
+// 	}
+
+// 	for (bottom = currentMenu->numitems; bottom > 0; bottom--)
+// 	{
+// 		if (currentMenu->menuitems[bottom-1].status != IT_DISABLED)
+// 			break;
+// 	}
+
+// 	for (max = bottom; max > 0; max--)
+// 	{
+// 		if (currentMenu->menuitems[max-1].status != IT_DISABLED && currentMenu->menuitems[max-1].alphaKey*2 + tempcentery <= (currentMenu->y + 2*scrollareaheight))
+// 			break;
+// 	}
+
+// 	if (i)
+// 		V_DrawString(currentMenu->x - 20, currentMenu->y - (skullAnimCounter/5), V_YELLOWMAP, "\x1A"); // up arrow
+// 	if (max != bottom)
+// 		V_DrawString(currentMenu->x - 20, currentMenu->y + 2*scrollareaheight + (skullAnimCounter/5), V_YELLOWMAP, "\x1B"); // down arrow
+
+// 	// draw title (or big pic)
+// 	M_DrawMenuTitle();
+
+// 	for (; i < max; i++)
+// 	{
+// 		y = currentMenu->menuitems[i].alphaKey*2 + tempcentery;
+// 		if (i == itemOn)
+// 			cursory = y;
+// 		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
+// 		{
+// 			case IT_PATCH:
+// 			case IT_DYBIGSPACE:
+// 			case IT_BIGSLIDER:
+// 			case IT_STRING2:
+// 			case IT_DYLITLSPACE:
+// 			case IT_GRAYPATCH:
+// 			case IT_TRANSTEXT2:
+// 				// unsupported
+// 				break;
+// 			case IT_NOTHING:
+// 				break;
+// 			case IT_STRING:
+// 			case IT_WHITESTRING:
+// 				if (i != itemOn && (currentMenu->menuitems[i].status & IT_DISPLAY)==IT_STRING)
+// 					V_DrawString(x, y, 0, currentMenu->menuitems[i].text);
+// 				else
+// 					V_DrawString(x, y, V_YELLOWMAP, currentMenu->menuitems[i].text);
+
+// 				// Cvar specific handling
+// 				switch (currentMenu->menuitems[i].status & IT_TYPE)
+// 					case IT_CVAR:
+// 					{
+// 						consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+// 						switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
+// 						{
+// 							case IT_CV_SLIDER:
+// 								M_DrawSlider(x, y, cv, (i == itemOn));
+// 							case IT_CV_NOPRINT: // color use this
+// 							case IT_CV_INVISSLIDER: // monitor toggles use this
+// 								break;
+// 							case IT_CV_STRING:
+// #if 1
+// 								if (y + 12 > (currentMenu->y + 2*scrollareaheight))
+// 									break;
+// 								M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
+// 								V_DrawString(x + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
+// 								if (skullAnimCounter < 4 && i == itemOn)
+// 									V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 12,
+// 										'_' | 0x80, false);
+// #else // cool new string type stuff, not ready for limelight
+// 								if (i == itemOn)
+// 								{
+// 									V_DrawFill(x-2, y-1, MAXSTRINGLENGTH*8 + 4, 8+3, 159);
+// 									V_DrawString(x, y, V_ALLOWLOWERCASE, cv->string);
+// 									if (skullAnimCounter < 4)
+// 										V_DrawCharacter(x + V_StringWidth(cv->string, 0), y, '_' | 0x80, false);
+// 								}
+// 								else
+// 									V_DrawRightAlignedString(BASEVIDWIDTH - x, y,
+// 									V_YELLOWMAP|V_ALLOWLOWERCASE, cv->string);
+// #endif
+// 								break;
+// 							default:
+// 								V_DrawRightAlignedString(BASEVIDWIDTH - x, y,
+// 									((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? V_REDMAP : V_YELLOWMAP), cv->string);
+// 								if (i == itemOn)
+// 								{
+// 									V_DrawCharacter(BASEVIDWIDTH - x - 10 - V_StringWidth(cv->string, 0) - (skullAnimCounter/5), y,
+// 											'\x1C' | V_YELLOWMAP, false);
+// 									V_DrawCharacter(BASEVIDWIDTH - x + 2 + (skullAnimCounter/5), y,
+// 											'\x1D' | V_YELLOWMAP, false);
+// 								}
+// 								break;
+// 						}
+// 						break;
+// 					}
+// 					break;
+// 			case IT_TRANSTEXT:
+// 				switch (currentMenu->menuitems[i].status & IT_TYPE)
+// 				{
+// 					case IT_PAIR:
+// 						V_DrawString(x, y,
+// 								V_TRANSLUCENT, currentMenu->menuitems[i].patch);
+// 						V_DrawRightAlignedString(BASEVIDWIDTH - x, y,
+// 								V_TRANSLUCENT, currentMenu->menuitems[i].text);
+// 						break;
+// 					default:
+// 						V_DrawString(x, y,
+// 								V_TRANSLUCENT, currentMenu->menuitems[i].text);
+// 				}
+// 				break;
+// 			case IT_QUESTIONMARKS:
+// 				V_DrawString(x, y, V_TRANSLUCENT|V_OLDSPACING, M_CreateSecretMenuOption(currentMenu->menuitems[i].text));
+// 				break;
+// 			case IT_HEADERTEXT:
+// 				//V_DrawString(x-16, y, V_YELLOWMAP, currentMenu->menuitems[i].text);
+// 				M_DrawLevelPlatterHeader(y - (lsheadingheight - 12), currentMenu->menuitems[i].text, true, false);
+// 				break;
+// 		}
+// 	}
+
+// 	// DRAW THE SKULL CURSOR
+// 	V_DrawScaledPatch(currentMenu->x - 24, cursory, 0,
+// 		W_CachePatchName("M_CURSOR", PU_PATCH));
+// }
+
+/*
+* The bar is filled with DrawFill from left to right
+* The white colored bar shows the network delay
+* 
+* The first parameter is INPUT DELAY
+It can be: Fixed, Variable (simtype.value)
+- "Fixed" means that that no matter the network conditions, you'll expect the same input delay.
+If the input delay time is more than network round trip time, then your netcmds will be delayed. If the input delay is less than RTT, then the rollback netcode will be activated up to RTT ticks times. The slider will not be moving.
+- "Vatiable" means how much max tics to ever simulate if needed. That's it. xD
+* The second parameter is ROLLBACK, that's the slider in the bar you control. (simtics.value)
+It enables rollback if the delay is above a certain point.
+It looks like this: 
+ROLLBACK: IF ABOVE 114ms (4 TICS)
+The leftmost slider position changes the string to:
+"PURE ROLLBACK"  
+The leftmost slider position changes the string to:
+"PURE INPUT DELAY" 
+
+* In the middle above	 the bar there's "Ping: 120ms" string
+
+The slider will be the header. All other parameters are drawn in the generic menu
+*/
+/// \brief Shows network conditions in a bar
+// static void M_DrawNetStatisticsHeader(INT32 xpos, INT32 ypos, INT32 width, INT32 height)
+// {
+// 	V_DrawFill(x, y, width, height, 159);
+// 	// V_DrawCharacter(x + 8 + V_StringWidth(setupm_name, V_ALLOWLOWERCASE), y + 3, '_' | 0x80, false);
+// 	if (!netgame)
+// 	{	
+// 		V_DrawCenteredString(x, y, V_ALLOWLOWERCASE, "You are not in a network game")
+// 		return;
+// 	}
+
+// 	return;
+// }
+
+
 static void M_DrawPauseMenu(void)
 {
 	if (!netgame && !multiplayer && (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION))
@@ -4823,6 +5145,25 @@ static void M_DrawPauseMenu(void)
 			V_DrawRightAlignedString(284, 44 + (i*8), V_MONOSPACE, emblem_text[i]);
 		}
 	}
+
+#ifdef HAVE_DISCORDRPC
+	// kind of hackily baked in here
+	if (currentMenu == &MPauseDef && discordRequestList != NULL)
+	{
+		const tic_t freq = TICRATE/2;
+
+		if ((leveltime % freq) >= freq/2)
+		{
+			V_DrawFixedPatch(204 * FRACUNIT,
+				(currentMenu->y + MPauseMenu[mpause_discordrequests].alphaKey - 1) * FRACUNIT,
+				FRACUNIT,
+				0,
+				W_CachePatchName("K_REQUE2", PU_CACHE),
+				NULL
+			);
+		}
+	}
+#endif
 
 	M_DrawGenericMenu();
 }
@@ -7001,7 +7342,11 @@ static void M_Options(INT32 choice)
 	OP_MainMenu[5].status = (Playing() && !(server || IsPlayerAdmin(consoleplayer))) ? (IT_GRAYEDOUT) : (IT_STRING|IT_CALL);
 
 	// if the player is playing _at all_, disable the erase data options
+#ifdef HAVE_DISCORDRPC
+	OP_DataOptionsMenu[3].status = (Playing()) ? (IT_GRAYEDOUT) : (IT_STRING|IT_SUBMENU);
+#else
 	OP_DataOptionsMenu[2].status = (Playing()) ? (IT_GRAYEDOUT) : (IT_STRING|IT_SUBMENU);
+#endif
 
 	OP_MainDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&OP_MainDef);
@@ -7034,6 +7379,20 @@ static void M_SelectableClearMenus(INT32 choice)
 {
 	(void)choice;
 	M_ClearMenus(true);
+}
+
+void M_RefreshPauseMenu(void)
+{
+#ifdef HAVE_DISCORDRPC
+	if (discordRequestList != NULL)
+	{
+		MPauseMenu[mpause_discordrequests].status = IT_STRING | IT_SUBMENU;
+	}
+	else
+	{
+		MPauseMenu[mpause_discordrequests].status = IT_GRAYEDOUT;
+	}
+#endif
 }
 
 // ======
@@ -13552,3 +13911,160 @@ static void M_QuitSRB2(INT32 choice)
 	(void)choice;
 	M_StartMessage(quitmsg[M_RandomKey(NUM_QUITMESSAGES)], M_QuitResponse, MM_YESNO);
 }
+#ifdef HAVE_DISCORDRPC
+static const tic_t confirmLength = 3*TICRATE/4;
+static tic_t confirmDelay = 0;
+static boolean confirmAccept = false;
+
+static void M_HandleDiscordRequests(INT32 choice)
+{
+	if (confirmDelay > 0)
+		return;
+
+	switch (choice)
+	{
+		case KEY_ENTER:
+			Discord_Respond(discordRequestList->userID, DISCORD_REPLY_YES);
+			confirmAccept = true;
+			confirmDelay = confirmLength;
+			S_StartSound(NULL, sfx_s3k63);
+			break;
+
+		case KEY_ESCAPE:
+			Discord_Respond(discordRequestList->userID, DISCORD_REPLY_NO);
+			confirmAccept = false;
+			confirmDelay = confirmLength;
+			S_StartSound(NULL, sfx_s3kb2);
+			break;
+	}
+}
+
+static const char *M_GetDiscordName(discordRequest_t *r)
+{
+	if (r == NULL)
+		return "";
+
+	if (cv_discordstreamer.value)
+		return r->username;
+
+	return va("%s#%s", r->username, r->discriminator);
+}
+
+// (this goes in k_hud.c when merged into v2)
+static void M_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean small)
+{
+	patch_t *stickerEnd;
+	INT32 height;
+	
+	if (small == true)
+	{
+		stickerEnd = W_CachePatchName("K_STIKE2", PU_CACHE);
+		height = 6;
+	}
+	else
+	{
+		stickerEnd = W_CachePatchName("K_STIKEN", PU_CACHE);
+		height = 11;
+	}
+
+	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, flags, stickerEnd, NULL);
+	V_DrawFill(x, y, width, height, 24|flags);
+	V_DrawFixedPatch((x + width)*FRACUNIT, y*FRACUNIT, FRACUNIT, flags|V_FLIP, stickerEnd, NULL);
+}
+
+static void M_DrawDiscordRequests(void)
+{
+	discordRequest_t *curRequest = discordRequestList;
+	UINT8 *colormap;
+	patch_t *hand = NULL;
+	boolean removeRequest = false;
+
+	const char *wantText = "...would like to join!";
+	const char *controlText = "\x82" "ENTER" "\x80" " - Accept    " "\x82" "ESC" "\x80" " - Decline";
+
+	INT32 x = 100;
+	INT32 y = 133;
+
+	INT32 slide = 0;
+	INT32 maxYSlide = 18;
+
+	if (confirmDelay > 0)
+	{
+		if (confirmAccept == true)
+		{
+			colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GREEN, GTC_CACHE);
+			hand = W_CachePatchName("K_LAPH02", PU_CACHE);
+		}
+		else
+		{
+			colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_RED, GTC_CACHE);
+			hand = W_CachePatchName("K_LAPH03", PU_CACHE);
+		}
+
+		slide = confirmLength - confirmDelay;
+
+		confirmDelay--;
+
+		if (confirmDelay == 0)
+			removeRequest = true;
+	}
+	else
+	{
+		colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GREY, GTC_CACHE);
+	}
+
+	V_DrawFixedPatch(56*FRACUNIT, 150*FRACUNIT, FRACUNIT, 0, W_CachePatchName("K_LAPE01", PU_CACHE), colormap);
+
+	if (hand != NULL)
+	{
+		fixed_t handoffset = (4 - abs((signed)(skullAnimCounter - 4))) * FRACUNIT;
+		V_DrawFixedPatch(56*FRACUNIT, 150*FRACUNIT + handoffset, FRACUNIT, 0, hand, NULL);
+	}
+
+	M_DrawSticker(x + (slide * 32), y - 1, V_ThinStringWidth(M_GetDiscordName(curRequest), V_ALLOWLOWERCASE|V_6WIDTHSPACE), 0, false);
+	V_DrawThinString(x + (slide * 32), y, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_YELLOWMAP, M_GetDiscordName(curRequest));
+
+	M_DrawSticker(x, y + 12, V_ThinStringWidth(wantText, V_ALLOWLOWERCASE|V_6WIDTHSPACE), 0, true);
+	V_DrawThinString(x, y + 10, V_ALLOWLOWERCASE|V_6WIDTHSPACE, wantText);
+
+	M_DrawSticker(x, y + 26, V_ThinStringWidth(controlText, V_ALLOWLOWERCASE|V_6WIDTHSPACE), 0, true);
+	V_DrawThinString(x, y + 24, V_ALLOWLOWERCASE|V_6WIDTHSPACE, controlText);
+
+	y -= 18;
+
+	while (curRequest->next != NULL)
+	{
+		INT32 ySlide = min(slide * 4, maxYSlide);
+
+		curRequest = curRequest->next;
+
+		M_DrawSticker(x, y - 1 + ySlide, V_ThinStringWidth(M_GetDiscordName(curRequest), V_ALLOWLOWERCASE|V_6WIDTHSPACE), 0, false);
+		V_DrawThinString(x, y + ySlide, V_ALLOWLOWERCASE|V_6WIDTHSPACE, M_GetDiscordName(curRequest));
+
+		y -= 12;
+		maxYSlide = 12;
+	}
+
+	if (removeRequest == true)
+	{
+		DRPC_RemoveRequest(discordRequestList);
+
+		if (discordRequestList == NULL)
+		{
+			// No other requests
+			MPauseMenu[mpause_discordrequests].status = IT_GRAYEDOUT;
+
+			if (currentMenu->prevMenu)
+			{
+				M_SetupNextMenu(currentMenu->prevMenu);
+				if (currentMenu == &MPauseDef)
+					itemOn = mpause_continue;
+			}
+			else
+				M_ClearMenus(true);
+
+			return;
+		}
+	}
+}
+#endif

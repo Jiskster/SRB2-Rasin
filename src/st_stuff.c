@@ -131,6 +131,11 @@ static patch_t *fnshico;
 
 static boolean facefreed[MAXPLAYERS];
 
+#ifdef HAVE_DISCORDRPC
+// Discord Rich Presence
+static patch_t *envelope;
+#endif
+
 hudinfo_t hudinfo[NUMHUDITEMS] =
 {
 	{  16, 176, V_SNAPTOLEFT|V_SNAPTOBOTTOM}, // HUD_LIVES
@@ -341,6 +346,11 @@ void ST_LoadGraphics(void)
 
 	for (i = 0; i < 7; ++i)
 		ngradeletters[i] = W_CachePatchName(va("GRADE%d", i), PU_HUDGFX);
+
+#ifdef HAVE_DISCORDRPC
+	// Discord Rich Presence
+	envelope = W_CachePatchName("K_REQUES", PU_HUDGFX);
+#endif
 }
 
 // made separate so that skins code can reload custom face graphics
@@ -2756,6 +2766,22 @@ static void ST_overlayDrawer(void)
 
 	ST_drawDebugInfo();
 }
+
+#ifdef HAVE_DISCORDRPC
+void ST_AskToJoinEnvelope(void)
+{
+	const tic_t freq = TICRATE/2;
+
+	if (menuactive)
+		return;
+
+	if ((leveltime % freq) < freq/2)
+		return;
+
+	V_DrawFixedPatch(296*FRACUNIT, 2*FRACUNIT, FRACUNIT, V_SNAPTOTOP|V_SNAPTORIGHT, envelope, NULL);
+	// maybe draw number of requests with V_DrawPingNum ?
+}
+#endif
 
 void ST_Drawer(void)
 {
