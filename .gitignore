@@ -21,5 +21,11 @@ Win32_LIB_ASM_Release
 /assets/debian
 /make
 /bin
+<<<<<<< HEAD
 /.vscode
 /build
+=======
+/build
+/build/*
+/CMakeUserPresets.json
+>>>>>>> dc79b25cb90887c5347994df099c9698a39fd09a

@@ -1,8 +1,8 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2022 by Sonic Team Junior.
-// Copyright (C) 2020-2022 by James R.
+// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 2020-2023 by James R.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -65,8 +65,8 @@ static CV_PossibleValue_t masterserver_update_rate_cons_t[] = {
 	{0,NULL}
 };
 
-consvar_t cv_masterserver = CVAR_INIT ("masterserver", "https://mb.srb2.org/MS/0", CV_SAVE|CV_CALL, NULL, MasterServer_OnChange);
-consvar_t cv_servername = CVAR_INIT ("servername", "SRB2 server", CV_SAVE|CV_NETVAR|CV_CALL|CV_NOINIT, NULL, Update_parameters);
+consvar_t cv_masterserver = CVAR_INIT ("masterserver", "https://ds.ms.srb2.org/MS/0", CV_SAVE|CV_CALL, NULL, MasterServer_OnChange);
+consvar_t cv_servername = CVAR_INIT ("servername", "SRB2 server", CV_SAVE|CV_NETVAR|CV_CALL|CV_NOINIT|CV_ALLOWLUA, NULL, Update_parameters);
 
 consvar_t cv_masterserver_update_rate = CVAR_INIT ("masterserver_update_rate", "5", CV_SAVE|CV_CALL|CV_NOINIT, masterserver_update_rate_cons_t, Update_parameters);
 
@@ -101,8 +101,8 @@ void AddMServCommands(void)
 	CV_RegisterVar(&cv_masterserver_token);
 	CV_RegisterVar(&cv_servername);
 #ifdef MASTERSERVER
-	COM_AddCommand("listserv", Command_Listserv_f);
-	COM_AddCommand("masterserver_update", Update_parameters); // allows people to updates manually in case you were delisted by accident
+	COM_AddCommand("listserv", Command_Listserv_f, 0);
+	COM_AddCommand("masterserver_update", Update_parameters, COM_LUA); // allows people to updates manually in case you were delisted by accident
 #endif
 #endif
 }
@@ -548,6 +548,13 @@ static void MasterServer_OnChange(void)
 	if (
 			! cv_masterserver.changed &&
 			strcmp(cv_masterserver.string, "ms.srb2.org:28900") == 0
+	){
+		CV_StealthSet(&cv_masterserver, cv_masterserver.defaultvalue);
+	}
+
+	if (
+			! cv_masterserver.changed &&
+			strcmp(cv_masterserver.string, "https://mb.srb2.org/MS/0") == 0
 	){
 		CV_StealthSet(&cv_masterserver, cv_masterserver.defaultvalue);
 	}

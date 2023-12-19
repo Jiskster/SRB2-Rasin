@@ -13,7 +13,6 @@ If the server isn't being hosted using this mod, then it'd work on top of the ex
 (Not yet implemented) If the server uses this mod, then more features will be available to clients using this mod too, and the network game will be more fluid.
 
 ## Dependencies
-- NASM (x86 builds only)
 - SDL2 (Linux/OS X only)
 - SDL2-Mixer (Linux/OS X only)
 - libupnp (Linux/OS X only)

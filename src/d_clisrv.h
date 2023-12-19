@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2022 by Sonic Team Junior.
+// Copyright (C) 1999-2023 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -92,6 +92,8 @@ typedef enum
 	PT_ASKLUAFILE,     // Client telling the server they don't have the file
 	PT_HASLUAFILE,     // Client telling the server they have the file
 
+	PT_BASICKEEPALIVE,// Keep the network alive during wipes, as tics aren't advanced and NetUpdate isn't called
+
 	// Add non-PT_CANFAIL packet types here to avoid breaking MS compatibility.
 
 	PT_CANFAIL,       // This is kind of a priority. Anything bigger than CANFAIL
@@ -173,6 +175,7 @@ typedef struct
 
 	UINT8 gametype;
 	UINT8 modifiedgame;
+	UINT8 usedCheats;
 
 	char server_context[8]; // Unique context id, generated at server startup.
 
@@ -434,6 +437,7 @@ extern tic_t servermaxping;
 extern consvar_t cv_netticbuffer, cv_allownewplayer, cv_joinnextround, cv_maxplayers, cv_joindelay, cv_rejointimeout;
 extern consvar_t cv_resynchattempts, cv_blamecfail;
 extern consvar_t cv_maxsend, cv_noticedownload, cv_downloadspeed;
+extern consvar_t cv_dedicatedidletime;
 
 extern consvar_t cv_discordinvites;
 
@@ -449,6 +453,9 @@ void SendKick(UINT8 playernum, UINT8 msg);
 
 // Create any new ticcmds and broadcast to other players.
 void NetUpdate(void);
+
+// Maintain connections to nodes without timing them all out.
+void NetKeepAlive(void);
 
 void SV_StartSinglePlayerServer(void);
 boolean SV_SpawnServer(void);
@@ -469,7 +476,7 @@ boolean Playing(void);
 void D_QuitNetGame(void);
 
 //? How many ticks to run?
-void TryRunTics(tic_t realtic, tic_t entertic);
+boolean TryRunTics(tic_t realtic, tic_t entertic);
 
 // Invalidates save states used in simulations
 void InvalidateSavestates();
@@ -489,6 +496,7 @@ extern char motd[254], server_context[8];
 extern UINT8 playernode[MAXPLAYERS];
 
 INT32 D_NumPlayers(void);
+INT32 D_NumBots(void);
 void D_ResetTiccmds(void);
 
 tic_t GetLag(INT32 node);
@@ -500,4 +508,7 @@ extern UINT8 hu_redownloadinggamestate;
 
 extern UINT8 adminpassmd5[16];
 extern boolean adminpasswordset;
+
+extern boolean hu_stopped;
+
 #endif
