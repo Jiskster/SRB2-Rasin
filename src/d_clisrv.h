@@ -42,6 +42,21 @@ therein, increment this number.
 #define BACKUPTICS 1024
 #define CLIENTBACKUPTICS 32
 #define MAXTEXTCMD 256
+
+// How many time bits to encode into ticcmds (aiming and angle components, respectively)
+#define ENCODE_TICCMD_TIMES
+#define TICCMD_TIMEBITS_AIMING 3
+#define TICCMD_TIMEBITS_ANGLE 2
+#define TICCMD_TIMEMASK_AIMING (~(0xFFFFFFFF<<TICCMD_TIMEBITS_AIMING))
+#define TICCMD_TIMEMASK_ANGLE  (~(0xFFFFFFFF<<TICCMD_TIMEBITS_ANGLE))
+#define TICCMD_TIME_SIZE (1<<(TICCMD_TIMEBITS_AIMING+TICCMD_TIMEBITS_ANGLE))
+
+// Maximum number of client-side simulations allowed. A simulation is a version of the game state extrapolated some frames ahead to cancel out network latency
+#define MAXSIMULATIONS TICRATE //one second of simulations
+#define MAXLOCALSAVESTATES 8
+
+
+extern tic_t liveTic;
 //
 // Packet structure
 //
@@ -163,6 +178,13 @@ typedef struct
 	UINT8 usedCheats;
 
 	char server_context[8]; // Unique context id, generated at server startup.
+
+	// Discord info (always defined for net compatibility)
+	UINT8 maxplayer;
+	boolean allownewplayer;
+	boolean discordinvites;
+
+	UINT8 varlengthinputs[0]; // Playernames and netvars
 } ATTRPACK serverconfig_pak;
 
 typedef struct
@@ -348,7 +370,7 @@ extern INT32 mapchangepending;
 
 // Points inside doomcom
 extern doomdata_t *netbuffer;
-
+extern consvar_t cv_stunserver;
 extern consvar_t cv_showjoinaddress;
 extern consvar_t cv_playbackspeed;
 
@@ -377,6 +399,17 @@ typedef enum
 
 } kickreason_t;
 
+// Player movement histories for simulated gamestates
+typedef struct
+{
+	// stores historical simulated positions where 0 is the real game position and simtic-gametic is the latest simulated position
+	fixed_t histx[MAXSIMULATIONS + 1], histy[MAXSIMULATIONS + 1], histz[MAXSIMULATIONS + 1];
+
+	// stores the final simulated position for each simulated gametic
+	fixed_t simx[MAXSIMULATIONS], simy[MAXSIMULATIONS], simz[MAXSIMULATIONS];
+
+} steadyplayer_t;
+
 /* the max number of name changes in some time period */
 #define MAXNAMECHANGES (5)
 #define NAMECHANGERATE (60*TICRATE)
@@ -388,6 +421,10 @@ extern boolean dedicated; // For dedicated server
 extern UINT16 software_MAXPACKETLENGTH;
 extern boolean acceptnewnode;
 extern SINT8 servernode;
+
+extern boolean issimulation; // whether the currently executed tic is part of a simulated gamestate
+extern steadyplayer_t steadyplayers[MAXPLAYERS]; // Player movement histories for simulated gamestates
+extern int rttJitter; //Round Trip Time jitter
 
 void Command_Ping_f(void);
 extern tic_t connectiontimeout;
@@ -401,6 +438,8 @@ extern consvar_t cv_netticbuffer, cv_allownewplayer, cv_joinnextround, cv_maxpla
 extern consvar_t cv_resynchattempts, cv_blamecfail;
 extern consvar_t cv_maxsend, cv_noticedownload, cv_downloadspeed;
 extern consvar_t cv_dedicatedidletime;
+
+extern consvar_t cv_discordinvites;
 
 // Used in d_net, the only dependence
 tic_t ExpandTics(INT32 low, INT32 node);
@@ -437,7 +476,10 @@ boolean Playing(void);
 void D_QuitNetGame(void);
 
 //? How many ticks to run?
-boolean TryRunTics(tic_t realtic);
+boolean TryRunTics(tic_t realtic, tic_t entertic);
+
+// Invalidates save states used in simulations
+void InvalidateSavestates();
 
 // extra data for lmps
 // these functions scare me. they contain magic.

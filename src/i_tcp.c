@@ -135,6 +135,7 @@
 
 #include "i_system.h"
 #include "i_net.h"
+#include "stun.h"
 #include "d_net.h"
 #include "d_netfil.h"
 #include "i_tcp.h"
@@ -560,7 +561,13 @@ static boolean SOCK_Get(void)
 		c = recvfrom(mysockets[n], (char *)&doomcom->data, MAXPACKETLENGTH, 0,
 			(void *)&fromaddress, &fromlen);
 		if (c != ERRSOCKET)
-		{
+		{			
+#ifdef USE_STUN
+			if (STUN_got_response(doomcom->data, c))
+			{
+				return false;
+			}
+#endif
 			// find remote node number
 			for (j = 1; j <= MAXNETNODES; j++) //include LAN
 			{

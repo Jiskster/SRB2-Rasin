@@ -36,10 +36,12 @@ static double tictimer;
 // low as possible though.
 #define MIN_SLEEP_DURATION_MS 2.1
 
+#if 0 //THANKS 2.2.11 - bitten
 tic_t I_GetTime(void)
 {
 	return g_time.time;
 }
+#endif
 
 void I_InitializeTime(void)
 {

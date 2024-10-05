@@ -98,5 +98,6 @@ lua_taglib.c
 lua_polyobjlib.c
 lua_blockmaplib.c
 lua_hudlib.c
+hashtable.c
 lua_hudlib_drawlist.c
 lua_inputlib.c

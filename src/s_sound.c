@@ -538,6 +538,12 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 	if (sfx_id == sfx_None)
 		return;
 
+	// local player sounds play immediately during simulations, this is controlled
+	// in TryRunTics and RunSimulations in d_clisrv.c
+	if (gamestate == GS_LEVEL) // and when we are actually playing
+		if (((simtic != targetsimtic - 1 && origin == listenmobj) || (origin != listenmobj && issimulation)))
+				return;
+
 	if (players[displayplayer].awayviewtics)
 		listenmobj = players[displayplayer].awayviewmobj;
 
@@ -1055,6 +1061,34 @@ static void S_StopChannel(INT32 cnum)
 
 	c->origin = NULL;
 }
+
+
+//
+// S_DetachChannelFromSource
+//
+// Detaches a sound channel from the object it came from, leaving it loose
+//
+// void S_DetachChannelsFromOrigin(void* origin)
+// {
+// 	int i;
+// 	mobj_t* originmobj = (mobj_t*)origin;
+// 	for (i = 0; i < numofchannels; i++)
+// 	{
+// 		if (channels[i].origin == origin)
+// 		{
+// 			// small hack: player-made sounds should stay hearable
+// 			if (originmobj->player != &players[displayplayer])
+// 			{
+// 				channels[i].isdetached = true;
+// 				channels[i].detachedx = originmobj->x;
+// 				channels[i].detachedy = originmobj->y;
+// 				channels[i].detachedz = originmobj->z;
+// 			}
+
+// 			channels[i].origin = NULL;
+// 		}
+// 	}
+// }
 
 //
 // S_CalculateSoundDistance

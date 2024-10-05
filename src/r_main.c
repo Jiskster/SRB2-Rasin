@@ -1129,7 +1129,7 @@ void R_SetupFrame(player_t *player)
 			}
 			else if (player == &players[secondarydisplayplayer])
 			{
-				newview->angle = localangle2;
+				newview->angle = localangle2; // WARNING: camera uses this
 				newview->aim = localaiming2;
 			}
 		}

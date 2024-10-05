@@ -1,11 +1,16 @@
-# Sonic Robo Blast 2
-[![latest release](https://badgen.net/github/release/STJr/SRB2/stable)](https://github.com/STJr/SRB2/releases/latest)
+[![Please Don't ship WIP](https://img.shields.io/badge/Please-Don't%20Ship%20WIP-yellow)](https://dont-ship.it/)
 
-[![Build status](https://ci.appveyor.com/api/projects/status/399d4hcw9yy7hg2y?svg=true)](https://ci.appveyor.com/project/STJr/srb2)
-[![Build status](https://travis-ci.org/STJr/SRB2.svg?branch=master)](https://travis-ci.org/STJr/SRB2)
-[![CircleCI](https://circleci.com/gh/STJr/SRB2/tree/master.svg?style=svg)](https://circleci.com/gh/STJr/SRB2/tree/master)
+# Sonic Robo Blast 2 NetPlus - Rollback Netcode mod
+[![Build Status](https://droneci.netplus.friskyfox.art/api/badges/NetPlus/netplus/status.svg)](https://droneci.netplus.friskyfox.art/NetPlus/netplus)
 
 [Sonic Robo Blast 2](https://srb2.org/) is a 3D Sonic the Hedgehog fangame based on a modified version of [Doom Legacy](http://doomlegacy.sourceforge.net/).
+
+NetPlus mod provides the ability to play network games without control lag using rollback netcode techniques, predicting the future game state before the server tells it.
+If you think you have a good connection, or live in an area of the world with robust Internet infrastructure, good netcode is still mandatory. 
+
+If the server isn't being hosted using this mod, then it'd work on top of the existing lockstep netcode. (Deterministic Prediction-Rollback based only on input from the server).
+
+(Not yet implemented) If the server uses this mod, then more features will be available to clients using this mod too, and the network game will be more fluid.
 
 ## Dependencies
 - SDL2 (Linux/OS X only)
@@ -19,4 +24,4 @@
 See [SRB2 Wiki/Source code compiling](http://wiki.srb2.org/wiki/Source_code_compiling)
 
 ## Disclaimer
-Sonic Team Junior is in no way affiliated with SEGA or Sonic Team. We do not claim ownership of any of SEGA's intellectual property used in SRB2.
+Sonic Team Junior, LXShadow and John FrostFox are in no way affiliated with SEGA or Sonic Team and do not claim ownership of any of SEGA's intellectual property used in SRB2.

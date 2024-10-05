@@ -121,6 +121,9 @@
 # SDL_PKGCONFIG=
 # SDL_CONFIG= - sdl-config command.
 # SDL_CFLAGS=, SDL_LDFLAGS=
+#
+# HAVE_DISCORDRPC=1 - Discord RPC integration
+
 
 clean_targets=cleandep clean distclean info
 

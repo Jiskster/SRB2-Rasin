@@ -7650,6 +7650,10 @@ static void P_InitGametype(void)
   */
 boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 {
+	//prevent loading a level when in a simulation
+	// if (issimulation)
+	// 	return true;
+
 	// use gamemap to get map number.
 	// 99% of the things already did, so.
 	// Map header should always be in place at this point
@@ -7667,6 +7671,14 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// Reset the palette
 	if (rendermode != render_none)
 		V_SetPaletteLump("PLAYPAL");
+
+	// Invalidate simulation save states
+	if (fromnetsave)
+	{
+		// CONS_Alert(CONS_WARNING, "Flushing savestates due to netsave loading\n");
+		DEBFILE("Flushing savestates due to netsave loading\n");
+		InvalidateSavestates();
+	}
 
 	// Initialize sector node list.
 	P_Initsecnode();
@@ -7813,6 +7825,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	Patch_FreeTag(PU_PATCH_LOWPRIORITY);
 	Patch_FreeTag(PU_PATCH_ROTATED);
 	Z_FreeTags(PU_LEVEL, PU_PURGELEVEL - 1);
+	InvalidateSavestates();
 
 	R_InitializeLevelInterpolators();
 

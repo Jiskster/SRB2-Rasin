@@ -31,6 +31,9 @@ extern boolean con_recalc;
 // console being displayed at game startup
 extern boolean con_startup;
 
+// no messages will be printed while the console is muted
+extern boolean con_muted;
+
 // needs explicit screen refresh until we are in the main game loop
 extern boolean con_refresh;
 

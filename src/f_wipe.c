@@ -559,6 +559,7 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu)
 		{
 			I_Sleep(cv_sleep.value);
 			I_UpdateTime(cv_timescale.value);
+			break;
 		}
 		lastwipetic = nowtime;
 

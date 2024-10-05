@@ -70,6 +70,8 @@
 #include "filesrch.h" // refreshdirmenu
 #include "g_input.h" // tutorial mode control scheming
 #include "m_perfstats.h"
+#include "i_net.h" // for netvariabletime (srb2netplus)
+#include "p_savenetrb.h"
 #include "m_random.h"
 #include "command.h"
 
@@ -94,8 +96,12 @@
 #include "lua_script.h"
 
 // Version numbers for netplay :upside_down_face:
-int    VERSION;
+int VERSION;
 int SUBVERSION;
+
+#ifdef HAVE_DISCORDRPC
+#include "discord.h"
+#endif
 
 // platform independant focus loss
 UINT8 window_notinfocus = false;
@@ -679,11 +685,33 @@ static void D_Display(void)
 			snprintf(s, sizeof s - 1, "get %d b/s", getbps);
 			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-40, V_YELLOWMAP, s);
 			snprintf(s, sizeof s - 1, "send %d b/s", sendbps);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-30, V_YELLOWMAP, s);
+			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT - ST_HEIGHT - 30, V_YELLOWMAP, s);
 			snprintf(s, sizeof s - 1, "GameMiss %.2f%%", gamelostpercent);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-20, V_YELLOWMAP, s);
+			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT - ST_HEIGHT - 20, V_YELLOWMAP, s);
 			snprintf(s, sizeof s - 1, "SysMiss %.2f%%", lostpercent);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-10, V_YELLOWMAP, s);
+			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT - ST_HEIGHT - 10, V_YELLOWMAP, s);
+		}
+
+		//netsimstat srb2netplus
+		if (cv_netsimstat.value && netDebugText[0] != 0)
+		{
+			const char *str = netDebugText;
+			int y = 0;
+
+			while (str != NULL)
+			{
+				char temp[1024];
+				const char *nextStr = strstr(str + 1, "\n");
+				int len = nextStr ? nextStr - str : strlen(str);
+
+				memcpy(temp, str, len);
+				temp[len] = 0;
+
+				V_DrawRightAlignedSmallString(BASEVIDWIDTH, y, V_YELLOWMAP, temp);
+
+				y += 5;
+				str = nextStr ? nextStr + 1 : NULL;
+			}
 		}
 
 		if (cv_perfstats.value)
@@ -716,7 +744,7 @@ void D_SRB2Loop(void)
 	if (dedicated)
 		server = true;
 
-	// Pushing of + parameters is now done back in D_SRB2Main, not here.
+		// Pushing of + parameters is now done back in D_SRB2Main, not here.
 
 #ifdef _WINDOWS
 	CONS_Printf("I_StartupMouse()...\n");
@@ -809,15 +837,12 @@ void D_SRB2Loop(void)
 
 		refreshdirmenu = 0; // not sure where to put this, here as good as any?
 
+			// bitten note, hope and pray
 		if (realtics > 0 || singletics)
 		{
-			// don't skip more than 10 frames at a time
-			// (fadein / fadeout cause massive frame skip!)
-			if (realtics > 8)
-				realtics = 1;
 
 			// process tics (but maybe not if realtic == 0)
-			TryRunTics(realtics);
+			TryRunTics(realtics, entertic);
 
 			if (lastdraw || singletics || gametic > rendergametic)
 			{
@@ -898,6 +923,12 @@ void D_SRB2Loop(void)
 #endif
 
 		LUA_Step();
+#ifdef HAVE_DISCORDRPC
+		if (! dedicated)
+		{
+			Discord_RunCallbacks();
+		}
+#endif
 
 		// Fully completed frame made.
 		finishprecise = I_GetPreciseTime();
@@ -1767,6 +1798,12 @@ void D_SRB2Main(void)
 		if (!P_LoadLevel(false, false))
 			I_Quit(); // fail so reset game stuff
 	}
+#ifdef HAVE_DISCORDRPC
+	if (! dedicated)
+	{
+		DRPC_Init();
+	}
+#endif
 }
 
 const char *D_Home(void)
