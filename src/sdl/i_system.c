@@ -2215,6 +2215,7 @@ static Uint64 tic_epoch;
 int8_t lastTimeFudge = 0;
 double elapsed;
 
+#if 0 // DAMMIT 2.2.11 - bitten
 tic_t I_GetTime(void)
 {
 	// static double elapsed; //basetime in the old code
@@ -2251,6 +2252,7 @@ tic_t I_GetTime(void)
 
 	return (tic_t)elapsed;
 }
+#endif
 
 //
 // I_GetTimeUs
