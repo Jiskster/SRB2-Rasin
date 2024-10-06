@@ -37,6 +37,7 @@
 #include "p_setup.h"
 #include "p_slopes.h"
 #include "i_system.h"
+#include "console.h"
 #include "hashtable.h" //I don't want to use hashtables there, but there will be anyways in the future
 
 savedata_t savedata;
@@ -1240,11 +1241,11 @@ static void ArchiveSectors(void)
 	size_t i, j;
 	const sector_t *ss = sectors;
 	const sector_t *spawnss = spawnsectors;
-	UINT8 diff, diff2, diff3;
+	UINT8 diff, diff2, diff3, diff4;
 
 	for (i = 0; i < numsectors; i++, ss++, spawnss++)
 	{
-		diff = diff2 = diff3 = 0;
+		diff = diff2 = diff3 = diff4 = 0;
 		if (ss->floorheight != spawnss->floorheight)
 			diff |= SD_FLOORHT;
 		if (ss->ceilingheight != spawnss->ceilingheight)
@@ -1283,8 +1284,28 @@ static void ArchiveSectors(void)
 		if (ss->crumblestate)
 			diff3 |= SD_CRUMBLESTATE;
 
+		if (ss->floorlightlevel != spawnss->floorlightlevel || ss->floorlightabsolute != spawnss->floorlightabsolute)
+			diff3 |= SD_FLOORLIGHT;
+		if (ss->ceilinglightlevel != spawnss->ceilinglightlevel || ss->ceilinglightabsolute != spawnss->ceilinglightabsolute)
+			diff3 |= SD_CEILLIGHT;
+		if (ss->flags != spawnss->flags)
+			diff3 |= SD_FLAG;
+		if (ss->specialflags != spawnss->specialflags)
+			diff3 |= SD_SPECIALFLAG;
+		if (ss->damagetype != spawnss->damagetype)
+			diff4 |= SD_DAMAGETYPE;
+		if (ss->triggertag != spawnss->triggertag)
+			diff4 |= SD_TRIGGERTAG;
+		if (ss->triggerer != spawnss->triggerer)
+			diff4 |= SD_TRIGGERER;
+		if (ss->gravity != spawnss->gravity)
+			diff4 |= SD_GRAVITY;
+
 		if (ss->ffloors && CheckFFloorDiff(ss))
 			diff |= SD_FFLOORS;
+
+		if (diff4)
+			diff3 |= SD_DIFF4;
 
 		if (diff3)
 			diff2 |= SD_DIFF3;
@@ -1300,6 +1321,8 @@ static void ArchiveSectors(void)
 				WRITEUINT8(save_p, diff2);
 			if (diff2 & SD_DIFF3)
 				WRITEUINT8(save_p, diff3);
+			if (diff3 & SD_DIFF4)
+				WRITEUINT8(save_p, diff4);
 			if (diff & SD_FLOORHT)
 				WRITEFIXED(save_p, ss->floorheight);
 			if (diff & SD_CEILHT)
@@ -1336,6 +1359,28 @@ static void ArchiveSectors(void)
 					// returns existing index if already added, or appends to net_colormaps and returns new index
 			if (diff3 & SD_CRUMBLESTATE)
 				WRITEINT32(save_p, ss->crumblestate);
+			if (diff3 & SD_FLOORLIGHT)
+			{
+				WRITEINT16(save_p, ss->floorlightlevel);
+				WRITEUINT8(save_p, ss->floorlightabsolute);
+			}
+			if (diff3 & SD_CEILLIGHT)
+			{
+				WRITEINT16(save_p, ss->ceilinglightlevel);
+				WRITEUINT8(save_p, ss->ceilinglightabsolute);
+			}
+			if (diff3 & SD_FLAG)
+				WRITEUINT32(save_p, ss->flags);
+			if (diff3 & SD_SPECIALFLAG)
+				WRITEUINT32(save_p, ss->specialflags);
+			if (diff4 & SD_DAMAGETYPE)
+				WRITEUINT8(save_p, ss->damagetype);
+			if (diff4 & SD_TRIGGERTAG)
+				WRITEINT16(save_p, ss->triggertag);
+			if (diff4 & SD_TRIGGERER)
+				WRITEUINT8(save_p, ss->triggerer);
+			if (diff4 & SD_GRAVITY)
+				WRITEFIXED(save_p, ss->gravity);
 			if (diff & SD_FFLOORS)
 				ArchiveFFloors(ss);
 		}
@@ -1347,7 +1392,7 @@ static void ArchiveSectors(void)
 static void UnArchiveSectors(void)
 {
 	UINT16 i, j;
-	UINT8 diff, diff2, diff3;
+	UINT8 diff, diff2, diff3, diff4;
 	for (;;)
 	{
 		i = READUINT16(save_p);
@@ -1356,7 +1401,11 @@ static void UnArchiveSectors(void)
 			break;
 
 		if (i > numsectors)
+		#if 0
 			I_Error("Invalid sector number %u from server (expected end at %s)", i, sizeu1(numsectors));
+		#else
+			numsectors = i;
+		#endif
 
 		diff = READUINT8(save_p);
 		if (diff & SD_DIFF2)
@@ -1367,6 +1416,10 @@ static void UnArchiveSectors(void)
 			diff3 = READUINT8(save_p);
 		else
 			diff3 = 0;
+		if (diff3 & SD_DIFF4)
+			diff4 = READUINT8(save_p);
+		else
+			diff4 = 0;
 
 		if (diff & SD_FLOORHT)
 			sectors[i].floorheight = READFIXED(save_p);
@@ -1427,6 +1480,31 @@ static void UnArchiveSectors(void)
 			sectors[i].extra_colormap = GetNetColormapFromList(READUINT32(save_p));
 		if (diff3 & SD_CRUMBLESTATE)
 			sectors[i].crumblestate = READINT32(save_p);
+		if (diff3 & SD_FLOORLIGHT)
+		{
+			sectors[i].floorlightlevel = READINT16(save_p);
+			sectors[i].floorlightabsolute = READUINT8(save_p);
+		}
+		if (diff3 & SD_CEILLIGHT)
+		{
+			sectors[i].ceilinglightlevel = READINT16(save_p);
+			sectors[i].ceilinglightabsolute = READUINT8(save_p);
+		}
+		if (diff3 & SD_FLAG)
+		{
+			sectors[i].flags = READUINT32(save_p);
+			CheckForReverseGravity |= (sectors[i].flags & MSF_GRAVITYFLIP);
+		}
+		if (diff3 & SD_SPECIALFLAG)
+			sectors[i].specialflags = READUINT32(save_p);
+		if (diff4 & SD_DAMAGETYPE)
+			sectors[i].damagetype = READUINT8(save_p);
+		if (diff4 & SD_TRIGGERTAG)
+			sectors[i].triggertag = READINT16(save_p);
+		if (diff4 & SD_TRIGGERER)
+			sectors[i].triggerer = READUINT8(save_p);
+		if (diff4 & SD_GRAVITY)
+			sectors[i].gravity = READFIXED(save_p);
 
 		if (diff & SD_FFLOORS)
 			UnArchiveFFloors(&sectors[i]);
@@ -5608,8 +5686,8 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 	tokenlist = READUINT32(save_p);
 
-	// if (!P_LoadLevel(true, reloading))
-	// 	return false;
+	if (!P_LoadLevel(true, reloading))
+		return false;
 
 	if ((!reloading || (gamemap != oldMap)))
 		return false;
@@ -6135,7 +6213,6 @@ void P_SaveGameState(savestate_t* savestate)
 	WRITEUINT32(save_p, globalmobjnum);
 
 	CV_SaveNetVars(&save_p);
-	P_NetArchiveMisc(true);
 
 
 	// Assign the mobjnumber for pointer tracking
@@ -6168,9 +6245,8 @@ void P_SaveGameState(savestate_t* savestate)
 	// 	}
 	// }
 
+	P_NetArchiveMisc(true);
 	P_NetArchivePlayers();
-	if (gamestate == GS_LEVEL)
-	{
 		// P_NetArchiveWorld();
 		P_LocalArchiveWorld();
 		P_ArchivePolyObjects();
@@ -6178,7 +6254,6 @@ void P_SaveGameState(savestate_t* savestate)
 		P_NetArchiveSpecials();
 		P_NetArchiveColormaps();
 		P_NetArchiveWaypoints();
-	}
 	LUA_Archive();
 
 	P_ArchiveLuabanksAndConsistency();
@@ -6213,19 +6288,17 @@ boolean P_LoadGameState(const savestate_t* savestate)
 
 	globalmobjnum = READUINT32(save_p);
 
-	cv_mute.value = true;
+	con_muted = true;
 	CV_LoadNetVars(&save_p);
-	cv_mute.value = false;
+	con_muted = false;
 	currentTime = I_GetPreciseTime();
-	if (!P_NetUnArchiveMisc(true))
+	if (P_NetUnArchiveMisc(true))
 	{
 		loadUnArchiveMisc = I_GetPreciseTime() - currentTime;
 		return false;
 	}
 	loadUnArchiveMisc = I_GetPreciseTime() - currentTime;
 	P_NetUnArchivePlayers();
-	if (gamestate == GS_LEVEL)
-	{
 		// P_NetUnArchiveWorld();
 		currentTime = I_GetPreciseTime();
 		P_LocalUnArchiveWorld();
@@ -6251,12 +6324,11 @@ boolean P_LoadGameState(const savestate_t* savestate)
 		currentTime = I_GetPreciseTime();
 		P_FinishMobjs();
 		loadFinishMobjs = I_GetPreciseTime() - currentTime;
-	}
-	cv_mute.value = true;
+	con_muted = true;
 	currentTime = I_GetPreciseTime();
 	LUA_UnArchive(); //candidate for optimization
 	loadLUA_UnArcive = I_GetPreciseTime() - currentTime;
-	cv_mute.value = false;
+	con_muted = false;
 
 	// This is stupid and hacky, but maybe it'll work!
 	P_SetRandSeed(P_GetInitSeed());

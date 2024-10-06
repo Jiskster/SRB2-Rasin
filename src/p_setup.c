@@ -7651,8 +7651,8 @@ static void P_InitGametype(void)
 boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 {
 	//prevent loading a level when in a simulation
-	// if (issimulation)
-	// 	return true;
+	if (issimulation)
+		return true;
 
 	// use gamemap to get map number.
 	// 99% of the things already did, so.
