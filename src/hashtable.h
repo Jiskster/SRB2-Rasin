@@ -25,7 +25,7 @@ thinker_t* mobjnum_ht_linkedList_Find (uint32_t mobjnumber);
 typedef struct hashtable hashtable;
 
 typedef struct {
-    const UINT32* key;
+    const char* key;
     void* value;
 
     hashtable* _table; // reference to hash table being iterated
@@ -33,14 +33,14 @@ typedef struct {
 } hashtable_iterator;
 
 hashtable* hashtable_Create(void); //creates a hashtable and returns the pointer
-void* hashtable_Get(hashtable* table, const UINT32* key);
+void* hashtable_Get(hashtable* table, const char* key);
 
 // Set item with given key (NUL-terminated) to value (which must not
 // be NULL). If not already present in table, key is copied to newly
 // allocated memory (keys are freed automatically when ht_destroy is
 // called). Return address of copied key, or NULL if out of memory.
 // const char* hashtable_Set(hashtable* table, UINT32* key, void* value);
-const char* hashtable_Set(hashtable* table, const UINT32* key, void* value);
+const char* hashtable_Set(hashtable* table, const char* key, void* value);
 
 size_t hashtable_Length(hashtable* table);
 

@@ -345,7 +345,7 @@ consvar_t cv_allowexitlevel = CVAR_INIT ("allowexitlevel", "No", CV_SAVE|CV_NETV
 
 consvar_t cv_killingdead = CVAR_INIT ("killingdead", "Off", CV_NETVAR|CV_ALLOWLUA, CV_OnOff, NULL);
 
-consvar_t cv_netsimstat = { "netsimstat", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL }; //srb2netplus, shows simulation stats
+consvar_t cv_netsimstat = CVAR_INIT ("netsimstat", "Off", CV_SAVE, CV_OnOff, NULL); //srb2netplus, shows simulation stats
 consvar_t cv_netstat = CVAR_INIT ("netstat", "Off", 0, CV_OnOff, NULL); // show bandwidth statistics
 static CV_PossibleValue_t nettimeout_cons_t[] = {{TICRATE/7, "MIN"}, {60*TICRATE, "MAX"}, {0, NULL}};
 consvar_t cv_nettimeout = CVAR_INIT ("nettimeout", "350", CV_CALL|CV_SAVE, nettimeout_cons_t, NetTimeout_OnChange);
@@ -385,52 +385,52 @@ consvar_t cv_mute = CVAR_INIT ("mute", "Off", CV_NETVAR|CV_CALL|CV_ALLOWLUA, CV_
 
 consvar_t cv_sleep = CVAR_INIT ("cpusleep", "1", CV_SAVE, sleeping_cons_t, NULL);
 
-consvar_t cv_simulate = { "sim", "Yes", 0, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_simulate = CVAR_INIT ("sim", "Yes", CV_SAVE, CV_YesNo, NULL);
 
-consvar_t cv_powerupmusic = { "powerupmusic", "Yes", 0, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL };
-consvar_t cv_playerfullbright = { "playerfullbright", "Yes", 0, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_powerupmusic = CVAR_INIT ("powerupmusic", "Yes", CV_SAVE, CV_YesNo, NULL);
+consvar_t cv_playerfullbright = CVAR_INIT ("playerfullbright", "Yes", CV_SAVE, CV_YesNo, NULL);
 
 
 static CV_PossibleValue_t simulateTics_cons_t[] = { {0, "MIN"}, {MAXSIMULATIONS - 1, "MAX"}, {0, NULL} };
-consvar_t cv_simulatetics = { "simtics", "MAX", 0, simulateTics_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_simulatetics = CVAR_INIT ( "simtics", "MAX", CV_SAVE, simulateTics_cons_t, NULL);
 
-consvar_t cv_simmisstics = { "simmisstics", "Yes", 0, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL };
-consvar_t cv_jittersmoothing = { "jittersmoothing", "Yes", 0, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_simmisstics = CVAR_INIT ( "simmisstics", "Yes", CV_SAVE, CV_YesNo, NULL);
+consvar_t cv_jittersmoothing = CVAR_INIT ( "jittersmoothing", "Yes", CV_SAVE, CV_YesNo, NULL);
 
 static CV_PossibleValue_t simulateculldistance_cons_t[] = { {0, "MIN"}, {10000, "MAX"}, {0, NULL} };
-consvar_t cv_simulateculldistance = { "simcull", "MIN", 0, simulateculldistance_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_simulateculldistance = CVAR_INIT ( "simcull", "MIN", CV_SAVE, simulateculldistance_cons_t, NULL);
 
 static CV_PossibleValue_t siminaccuracy_cons_t[] = { {1, "MIN"}, {10, "MAX"}, {0, NULL} };
-consvar_t cv_siminaccuracy = { "siminaccuracy", "MIN", 0, siminaccuracy_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_siminaccuracy = CVAR_INIT ( "siminaccuracy", "MIN", CV_SAVE, siminaccuracy_cons_t, NULL);
 
 static CV_PossibleValue_t netsteadyplayers_cons_t[] = { {0, "MIN"}, {MAXSIMULATIONS - 1, "MAX"}, {0, NULL} };
-consvar_t cv_netsteadyplayers = { "simsteadyplayers", "0", 0, netsteadyplayers_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_netsteadyplayers = CVAR_INIT ( "simsteadyplayers", "0", CV_SAVE, netsteadyplayers_cons_t, NULL);
 
 static CV_PossibleValue_t nettrails_cons_t[] = { {0, "MIN"}, {10, "MAX"}, {0, NULL} };
-consvar_t cv_nettrails = { "simtrails", "5", 0, nettrails_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_nettrails = CVAR_INIT ( "simtrails", "5", CV_SAVE, nettrails_cons_t, NULL);
 
-consvar_t cv_netslingdelay = { "simslingdelay", "No", 0, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_netslingdelay = CVAR_INIT ( "simslingdelay", "No", CV_SAVE, CV_YesNo, NULL);
 
 static CV_PossibleValue_t netdelay_cons_t[] = { {0, "MIN"}, {250, "MAX"}, {0, NULL} };
-consvar_t cv_netdelay = { "netdelay", "0", 0, netdelay_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_netdelay = CVAR_INIT ( "netdelay", "0", CV_SAVE, netdelay_cons_t, NULL);
 
 static CV_PossibleValue_t netjitter_cons_t[] = { {0, "MIN"}, {5, "MAX"}, {0, NULL} };
-consvar_t cv_netjitter = { "netjitter", "0", 0, netdelay_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_netjitter = CVAR_INIT ( "netjitter", "0", CV_SAVE, netdelay_cons_t, NULL);
 
-consvar_t cv_netsmoothing = { "netsmoothing", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_netsmoothing = CVAR_INIT ( "netsmoothing", "Off", CV_SAVE, CV_OnOff, NULL);
 
-consvar_t cv_netspikes = { "netspikes", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_netspikes = CVAR_INIT ( "netspikes", "Off", CV_SAVE, CV_OnOff, NULL);
 
 static CV_PossibleValue_t netvariabletime_cons_t[] = { {-1, "MIN"}, {100, "MAX"}, {0, NULL} };
-consvar_t cv_netvariabletime = { "netvariabletime", "-1", 0, netvariabletime_cons_t, NULL, -1, NULL, NULL, 0, 0, NULL };
+consvar_t cv_netvariabletime = CVAR_INIT ( "netvariabletime", "-1", CV_SAVE, netvariabletime_cons_t, NULL);
 
 static CV_PossibleValue_t debugsimulaterewind_cons_t[] = { {0, "MIN"}, {BACKUPTICS - 1, "MAX"}, {0, NULL} };
-consvar_t cv_debugsimulaterewind = { "debugsimulaterewind", "0", 0, debugsimulaterewind_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_debugsimulaterewind = CVAR_INIT ( "debugsimulaterewind", "0", CV_SAVE, debugsimulaterewind_cons_t, NULL);
 
 static CV_PossibleValue_t timefudge_cons_t[] = { {0, "MIN"}, {100, "MAX"}, {0, NULL} };
-consvar_t cv_timefudge = { "timefudge", "0", CV_CALL, timefudge_cons_t, TimeFudge_OnChange, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_timefudge = CVAR_INIT ( "timefudge", "0", CV_CALL, timefudge_cons_t, TimeFudge_OnChange);
 
-consvar_t cv_autoupdatetimefudge = {"autoupdatetimefudge", "No", 0, CV_YesNo, NULL, 0, NULL, NULL, 0, 0, NULL};
+consvar_t cv_autoupdatetimefudge = CVAR_INIT ("autoupdatetimefudge", "No", CV_SAVE, CV_YesNo, NULL);
 
 
 static CV_PossibleValue_t perfstats_cons_t[] = {

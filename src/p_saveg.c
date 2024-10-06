@@ -36,6 +36,7 @@
 #include "lua_script.h"
 #include "p_setup.h"
 #include "p_slopes.h"
+#include "i_system.h"
 #include "hashtable.h" //I don't want to use hashtables there, but there will be anyways in the future
 
 savedata_t savedata;
@@ -1239,11 +1240,11 @@ static void ArchiveSectors(void)
 	size_t i, j;
 	const sector_t *ss = sectors;
 	const sector_t *spawnss = spawnsectors;
-	UINT8 diff, diff2, diff3, diff4;
+	UINT8 diff, diff2, diff3;
 
 	for (i = 0; i < numsectors; i++, ss++, spawnss++)
 	{
-		diff = diff2 = diff3 = diff4 = 0;
+		diff = diff2 = diff3 = 0;
 		if (ss->floorheight != spawnss->floorheight)
 			diff |= SD_FLOORHT;
 		if (ss->ceilingheight != spawnss->ceilingheight)
@@ -1282,28 +1283,8 @@ static void ArchiveSectors(void)
 		if (ss->crumblestate)
 			diff3 |= SD_CRUMBLESTATE;
 
-		if (ss->floorlightlevel != spawnss->floorlightlevel || ss->floorlightabsolute != spawnss->floorlightabsolute)
-			diff3 |= SD_FLOORLIGHT;
-		if (ss->ceilinglightlevel != spawnss->ceilinglightlevel || ss->ceilinglightabsolute != spawnss->ceilinglightabsolute)
-			diff3 |= SD_CEILLIGHT;
-		if (ss->flags != spawnss->flags)
-			diff3 |= SD_FLAG;
-		if (ss->specialflags != spawnss->specialflags)
-			diff3 |= SD_SPECIALFLAG;
-		if (ss->damagetype != spawnss->damagetype)
-			diff4 |= SD_DAMAGETYPE;
-		if (ss->triggertag != spawnss->triggertag)
-			diff4 |= SD_TRIGGERTAG;
-		if (ss->triggerer != spawnss->triggerer)
-			diff4 |= SD_TRIGGERER;
-		if (ss->gravity != spawnss->gravity)
-			diff4 |= SD_GRAVITY;
-
 		if (ss->ffloors && CheckFFloorDiff(ss))
 			diff |= SD_FFLOORS;
-
-		if (diff4)
-			diff3 |= SD_DIFF4;
 
 		if (diff3)
 			diff2 |= SD_DIFF3;
@@ -1319,8 +1300,6 @@ static void ArchiveSectors(void)
 				WRITEUINT8(save_p, diff2);
 			if (diff2 & SD_DIFF3)
 				WRITEUINT8(save_p, diff3);
-			if (diff3 & SD_DIFF4)
-				WRITEUINT8(save_p, diff4);
 			if (diff & SD_FLOORHT)
 				WRITEFIXED(save_p, ss->floorheight);
 			if (diff & SD_CEILHT)
@@ -1357,28 +1336,6 @@ static void ArchiveSectors(void)
 					// returns existing index if already added, or appends to net_colormaps and returns new index
 			if (diff3 & SD_CRUMBLESTATE)
 				WRITEINT32(save_p, ss->crumblestate);
-			if (diff3 & SD_FLOORLIGHT)
-			{
-				WRITEINT16(save_p, ss->floorlightlevel);
-				WRITEUINT8(save_p, ss->floorlightabsolute);
-			}
-			if (diff3 & SD_CEILLIGHT)
-			{
-				WRITEINT16(save_p, ss->ceilinglightlevel);
-				WRITEUINT8(save_p, ss->ceilinglightabsolute);
-			}
-			if (diff3 & SD_FLAG)
-				WRITEUINT32(save_p, ss->flags);
-			if (diff3 & SD_SPECIALFLAG)
-				WRITEUINT32(save_p, ss->specialflags);
-			if (diff4 & SD_DAMAGETYPE)
-				WRITEUINT8(save_p, ss->damagetype);
-			if (diff4 & SD_TRIGGERTAG)
-				WRITEINT16(save_p, ss->triggertag);
-			if (diff4 & SD_TRIGGERER)
-				WRITEUINT8(save_p, ss->triggerer);
-			if (diff4 & SD_GRAVITY)
-				WRITEFIXED(save_p, ss->gravity);
 			if (diff & SD_FFLOORS)
 				ArchiveFFloors(ss);
 		}
@@ -1390,7 +1347,7 @@ static void ArchiveSectors(void)
 static void UnArchiveSectors(void)
 {
 	UINT16 i, j;
-	UINT8 diff, diff2, diff3, diff4;
+	UINT8 diff, diff2, diff3;
 	for (;;)
 	{
 		i = READUINT16(save_p);
@@ -1410,10 +1367,6 @@ static void UnArchiveSectors(void)
 			diff3 = READUINT8(save_p);
 		else
 			diff3 = 0;
-		if (diff3 & SD_DIFF4)
-			diff4 = READUINT8(save_p);
-		else
-			diff4 = 0;
 
 		if (diff & SD_FLOORHT)
 			sectors[i].floorheight = READFIXED(save_p);
@@ -1474,31 +1427,6 @@ static void UnArchiveSectors(void)
 			sectors[i].extra_colormap = GetNetColormapFromList(READUINT32(save_p));
 		if (diff3 & SD_CRUMBLESTATE)
 			sectors[i].crumblestate = READINT32(save_p);
-		if (diff3 & SD_FLOORLIGHT)
-		{
-			sectors[i].floorlightlevel = READINT16(save_p);
-			sectors[i].floorlightabsolute = READUINT8(save_p);
-		}
-		if (diff3 & SD_CEILLIGHT)
-		{
-			sectors[i].ceilinglightlevel = READINT16(save_p);
-			sectors[i].ceilinglightabsolute = READUINT8(save_p);
-		}
-		if (diff3 & SD_FLAG)
-		{
-			sectors[i].flags = READUINT32(save_p);
-			CheckForReverseGravity |= (sectors[i].flags & MSF_GRAVITYFLIP);
-		}
-		if (diff3 & SD_SPECIALFLAG)
-			sectors[i].specialflags = READUINT32(save_p);
-		if (diff4 & SD_DAMAGETYPE)
-			sectors[i].damagetype = READUINT8(save_p);
-		if (diff4 & SD_TRIGGERTAG)
-			sectors[i].triggertag = READINT16(save_p);
-		if (diff4 & SD_TRIGGERER)
-			sectors[i].triggerer = READUINT8(save_p);
-		if (diff4 & SD_GRAVITY)
-			sectors[i].gravity = READFIXED(save_p);
 
 		if (diff & SD_FFLOORS)
 			UnArchiveFFloors(&sectors[i]);
@@ -1912,9 +1840,8 @@ static const specialdef_t specialDefs[] =
 	NOSECTOR(T_Fade, fade_t),                          // tc_fade
 	WITHSECTOR(T_FadeColormap, fadecolormap_t, ST_FADEMAPDATA),          // tc_fade
 	NOSECTOR(T_PlaneDisplace, planedisplace_t),        // tc_planedisplace
-		// bitten note: these were removed by srb2
-//	NOSECTOR(T_DynamicSlopeLine, dynplanethink_t),      // tc_dynslopeline
-//	NOSECTOR(T_DynamicSlopeVert, dynplanethink_t),      // tc_dynslopevert
+	NOSECTOR(T_DynamicSlopeLine, dynlineplanethink_t),      // tc_dynslopeline
+	NOSECTOR(T_DynamicSlopeVert, dynvertexplanethink_t),      // tc_dynslopevert
 	NOSECTOR(T_PolyObjRotate, polyrotate_t),            // tc_polyrotate
 	NOSECTOR(T_PolyObjMove, polymove_t),                // tc_polymove
 	NOSECTOR(T_PolyObjWaypoint, polywaypoint_t),        // tc_polywaypoint
@@ -3007,8 +2934,6 @@ static void P_NetArchiveThinkers(void)
 				SavePolyfadeThinker(th, tc_polyfade);
 				continue;
 			}
-			// bitten note: type removed by srb2
-#if 0
 			else if (th->function.acp1 == (actionf_p1)T_DynamicSlopeLine)
 			{
 				SaveDynamicLineSlopeThinker(th, tc_dynslopeline);
@@ -3019,7 +2944,6 @@ static void P_NetArchiveThinkers(void)
 				SaveDynamicVertexSlopeThinker(th, tc_dynslopevert);
 				continue;
 			}
-#endif
 #ifdef PARANOIA
 			else
 				I_Assert(th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed); // wait garbage collection
@@ -5080,8 +5004,6 @@ static void P_NetUnArchiveThinkers(void)
 				case tc_polyfade:
 					th = LoadPolyfadeThinker((actionf_p1)T_PolyObjFade);
 					break;
-// bitten note: these were removed by srb2 sense 2.2.10
-#if 0
 				case tc_dynslopeline:
 					th = LoadDynamicLineSlopeThinker((actionf_p1)T_DynamicSlopeLine);
 					break;
@@ -5089,7 +5011,6 @@ static void P_NetUnArchiveThinkers(void)
 				case tc_dynslopevert:
 					th = LoadDynamicVertexSlopeThinker((actionf_p1)T_DynamicSlopeVert);
 					break;
-#endif
 
 				case tc_scroll:
 					th = LoadScrollThinker((actionf_p1)T_Scroll);
@@ -5648,11 +5569,10 @@ static void P_NetArchiveMisc(boolean resending)
 		WRITEUINT8(save_p, 0x2e);
 }
 
-
-
 static inline boolean P_NetUnArchiveMisc(boolean reloading)
 {
 	INT32 i;
+	INT16 oldMap = gamemap;
 
 	if (READUINT32(save_p) != ARCHIVEBLOCK_MISC)
 		I_Error("Bad $$$.sav at archive block Misc");
@@ -5688,11 +5608,11 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 	tokenlist = READUINT32(save_p);
 
-	if (!P_LoadLevel(true, reloading))
-	{
-		CONS_Alert(CONS_ERROR, M_GetText("Can't load the level!\n"));
+	// if (!P_LoadLevel(true, reloading))
+	// 	return false;
+
+	if ((!reloading || (gamemap != oldMap)))
 		return false;
-	}
 
 	// get the time
 	leveltime = READUINT32(save_p);
@@ -6077,7 +5997,6 @@ static inline boolean P_UnArchiveLuabanksAndConsistency(void)
 	return true;
 }
 
-UINT32 I_GetTimeUs(void);
 
 void P_SaveGame(INT16 mapnum)
 {
@@ -6286,8 +6205,9 @@ boolean P_LoadGameState(const savestate_t* savestate)
 	if (savedGameMap != gamemap)
 	{
 		// savestates do not work cross-level
-		// save_p = NULL; //invalidate it //FUCK
+		save_p = NULL; //invalidate it //FUCK
 		loadStateBenchmark = I_GetPreciseTime() - loadStateBenchmark;
+		CONS_Alert(CONS_ERROR, "savestates do not work cross-level");
 		return false;
 	}
 

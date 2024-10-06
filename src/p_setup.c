@@ -7675,7 +7675,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// Invalidate simulation save states
 	if (fromnetsave)
 	{
-		// CONS_Alert(CONS_WARNING, "Flushing savestates due to netsave loading\n");
+		CONS_Alert(CONS_WARNING, "Flushing savestates due to netsave loading\n");
 		DEBFILE("Flushing savestates due to netsave loading\n");
 		InvalidateSavestates();
 	}

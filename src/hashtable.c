@@ -242,7 +242,7 @@ static uint64_t hash_key(const char* key) {
     return hash;
 }
 
-void* hashtable_Get(hashtable* table, const UINT32* key) {
+void* hashtable_Get(hashtable* table, const char* key) {
     // AND hash with capacity-1 to ensure it's within entries array.
     uint64_t hash = hash_key(key);
     size_t index = (size_t)(hash & (uint64_t)(table->capacity - 1));
@@ -327,7 +327,7 @@ static boolean ht_expand(hashtable* table) {
     return true;
 }
 
-const char* hashtable_Set(hashtable* table, const UINT32* key, void* value) {
+const char* hashtable_Set(hashtable* table, const char* key, void* value) {
     assert(value != NULL);
     if (value == NULL) {
         return NULL;
