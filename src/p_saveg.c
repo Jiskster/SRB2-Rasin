@@ -5686,7 +5686,7 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 
 	tokenlist = READUINT32(save_p);
 
-	if (!P_LoadLevel(true, reloading))
+	if (!reloading && !P_LoadLevel(true, reloading))
 		return false;
 
 	if ((!reloading || (gamemap != oldMap)))
@@ -6292,7 +6292,7 @@ boolean P_LoadGameState(const savestate_t* savestate)
 	CV_LoadNetVars(&save_p);
 	con_muted = false;
 	currentTime = I_GetPreciseTime();
-	if (P_NetUnArchiveMisc(true))
+	if (!P_NetUnArchiveMisc(true))
 	{
 		loadUnArchiveMisc = I_GetPreciseTime() - currentTime;
 		return false;
