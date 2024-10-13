@@ -6249,7 +6249,7 @@ void P_SaveGameState(savestate_t* savestate)
 	P_NetArchivePlayers();
 		// P_NetArchiveWorld();
 		P_LocalArchiveWorld();
-		P_ArchivePolyObjects();
+		//P_ArchivePolyObjects();
 		P_NetArchiveThinkers();
 		P_NetArchiveSpecials();
 		P_NetArchiveColormaps();
@@ -6304,7 +6304,7 @@ boolean P_LoadGameState(const savestate_t* savestate)
 		P_LocalUnArchiveWorld();
 		loadUnArchiveWorld = I_GetPreciseTime() - currentTime;
 		currentTime = I_GetPreciseTime();
-		P_UnArchivePolyObjects();
+		//P_UnArchivePolyObjects();
 		loadUnArchivePolyObjects = I_GetPreciseTime() - currentTime;
 		currentTime = I_GetPreciseTime();
 		P_NetUnArchiveThinkers();
