@@ -397,6 +397,7 @@ typedef struct mobj_s
 	fixed_t waterbottom; // bottom of the water FOF the mobj is in
 
 	UINT32 mobjnum; // A unique number for this mobj. Used for restoring pointers on save games.
+	UINT32 localmobjnum; // A unique number for this mobj stored locally for association when restoring savestates
 
 	fixed_t scale;
 	fixed_t old_scale; // interpolation
@@ -420,6 +421,8 @@ typedef struct mobj_s
 	boolean mirrored; // The object's rotations will be mirrored left to right, e.g., see frame AL from the right and AR from the left
 	fixed_t shadowscale; // If this object casts a shadow, and the size relative to radius
 	INT32 dispoffset; // copy of info->dispoffset, so mobjs can be sorted independently of their type
+
+	boolean isculled; // Whether the mobj is being culled during simulations
 
 	// WARNING: New fields must be added separately to savegame and Lua.
 } mobj_t;
@@ -542,6 +545,7 @@ void P_EmeraldManager(void);
 mobj_t *P_FindNewPosition(UINT32 oldposition);
 
 extern INT32 modulothing;
+extern UINT32 globalmobjnum;
 
 #define MAXHUNTEMERALDS 64
 extern mapthing_t *huntemeralds[MAXHUNTEMERALDS];

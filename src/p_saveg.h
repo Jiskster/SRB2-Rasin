@@ -32,10 +32,21 @@ typedef struct
 	size_t pos;
 } save_t;
 
+extern char netDebugText[10000];
+
+typedef struct
+{
+	UINT8* buffer;
+} savestate_t;
+
 void P_SaveGame(save_t *save_p, INT16 mapnum);
 void P_SaveNetGame(save_t *save_p, boolean resending);
+void P_SaveGameState(save_t *save_p, savestate_t* savestate);
+void P_GameStateFreeMemory(savestate_t* savestate);
 boolean P_LoadGame(save_t *save_p, INT16 mapoverride);
 boolean P_LoadNetGame(save_t *save_p, boolean reloading);
+
+boolean P_LoadGameState(save_t *save_p, const savestate_t* savestate);
 
 typedef struct
 {

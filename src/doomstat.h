@@ -581,6 +581,14 @@ extern tic_t hidetime;
 extern tic_t gametic;
 #define localgametic leveltime
 
+extern tic_t neededtic;
+extern tic_t simtic; // current tic at simulation, if applicable (if no simulation happened, this=gametic)
+extern tic_t targetsimtic; // the target sim tic, if applicable
+extern tic_t smoothedTic; // current game tic when smoothing is enabled (\todo: could cause problems if game objects care about gametic)
+extern boolean canSimulate;
+// extern boolean canPlaySounds;
+extern tic_t finaltargetsimtic;	
+
 // Player spawn spots.
 extern mapthing_t *playerstarts[MAXPLAYERS]; // Cooperative
 extern mapthing_t *bluectfstarts[MAXPLAYERS]; // CTF

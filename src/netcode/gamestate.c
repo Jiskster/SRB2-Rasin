@@ -228,6 +228,14 @@ void CL_ReloadReceivedSavegame(void)
 		sprintf(player_names[i], "Player %d", i + 1);
 	}
 
+	if (simtic > gametic && !canSimulate) 
+	{
+		simtic = gametic;
+		CONS_Printf("Not simulating, clearing local savestates...\n");
+		// we don't load our local gamestate because we are gonna load the server's one 
+		InvalidateSavestates();
+	}
+
 	CL_LoadReceivedSavegame(true);
 
 	neededtic = max(neededtic, gametic);

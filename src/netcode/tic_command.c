@@ -419,16 +419,23 @@ void SV_SendTics(void)
 
 void Local_Maketic(INT32 realtics)
 {
-	I_OsPolling(); // I_Getevent
-	D_ProcessEvents(); // menu responder, cons responder,
-	                   // game responder calls HU_Responder, AM_Responder,
-	                   // and G_MapEventsToControls
+	// if (finaltargetsimtic + 1 == simtic || !canSimulate)
+	// {
+		I_OsPolling(); // I_Getevent
+		D_ProcessEvents(); // menu responder, cons responder,
+						// game responder calls HU_Responder, AM_Responder,
+						// and G_MapEventsToControls
+	// }
+	
 	if (!dedicated)
 		rendergametic = gametic;
 	// translate inputs (keyboard/mouse/joystick) into game controls
-	G_BuildTiccmd(&localcmds, realtics, 1);
+	if (finaltargetsimtic == simtic || !canSimulate || !issimulation)
+		G_BuildTiccmd(&localcmds, realtics, 1);
 	if (splitscreen || botingame)
 		G_BuildTiccmd(&localcmds2, realtics, 2);
+
+	EncodeTiccmdTime(&localcmds, I_GetTime()); //encode ticks
 
 	localcmds.angleturn |= TICCMD_RECEIVED;
 	localcmds2.angleturn |= TICCMD_RECEIVED;

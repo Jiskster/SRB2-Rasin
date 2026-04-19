@@ -119,6 +119,9 @@ typedef enum
 	MN_SR_PLAYER,
 	MN_SR_SOUNDTEST,
 
+	//Netplus options menu
+	MN_OP_NETPLUS,
+
 	// Addons (Part of MISC, but let's make it our own)
 	MN_AD_MAIN,
 

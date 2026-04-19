@@ -1394,7 +1394,7 @@ void PT_ServerCFG(SINT8 node)
 
 	if (client)
 	{
-		maketic = gametic = neededtic = (tic_t)LONG(netbuffer->u.servercfg.gametic);
+		maketic = gametic = simtic = neededtic = (tic_t)LONG(netbuffer->u.servercfg.gametic);
 		G_SetGametype(netbuffer->u.servercfg.gametype);
 		modifiedgame = netbuffer->u.servercfg.modifiedgame;
 		if (netbuffer->u.servercfg.usedCheats)

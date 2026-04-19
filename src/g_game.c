@@ -123,6 +123,13 @@ INT32 consoleplayer; // player taking events and displaying
 INT32 displayplayer; // view being displayed
 INT32 secondarydisplayplayer; // for splitscreen
 
+tic_t simtic; // simulated tic
+tic_t targetsimtic; // target simulated tic
+tic_t smoothedTic;
+boolean canSimulate;
+tic_t finaltargetsimtic;
+// boolean canPlaySounds;
+
 tic_t gametic;
 tic_t levelstarttic; // gametic at level start
 UINT32 ssspheres; // old special stage

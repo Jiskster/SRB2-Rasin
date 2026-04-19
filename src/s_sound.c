@@ -538,6 +538,12 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 	if (sfx_id == sfx_None)
 		return;
 
+	// local player sounds play immediately during simulations, this is controlled
+	// in TryRunTics and RunSimulations in d_clisrv.c
+	if (gamestate == GS_LEVEL) // and when we are actually playing
+		if (((simtic != targetsimtic - 1 && origin == listenmobj) || (origin != listenmobj && issimulation)))
+				return;
+
 	if (players[displayplayer].awayviewtics)
 		listenmobj = players[displayplayer].awayviewmobj;
 

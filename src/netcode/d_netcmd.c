@@ -109,6 +109,10 @@ static void Color2_OnChange(void);
 static void DummyConsvar_OnChange(void);
 static void SoundTest_OnChange(void);
 
+static void TimeFudge_OnChange(void);
+void Command_Autotimefudge(void);
+static void AutoUpdateTimeFudge_OnChange(void);
+
 static boolean Skin_CanChange(const char *valstr);
 static boolean Skin2_CanChange(const char *valstr);
 
@@ -348,6 +352,8 @@ consvar_t cv_allowexitlevel = CVAR_INIT ("allowexitlevel", "No", CV_SAVE|CV_NETV
 
 consvar_t cv_killingdead = CVAR_INIT ("killingdead", "Off", CV_NETVAR|CV_ALLOWLUA, CV_OnOff, NULL);
 
+consvar_t cv_netsimstat = CVAR_INIT("netsimstat", "Off", 0, CV_OnOff, NULL); //srb2netplus, shows simulation stats
+
 consvar_t cv_netstat = CVAR_INIT ("netstat", "Off", 0, CV_OnOff, NULL); // show bandwidth statistics
 static CV_PossibleValue_t nettimeout_cons_t[] = {{TICRATE/7, "MIN"}, {60*TICRATE, "MAX"}, {0, NULL}};
 consvar_t cv_nettimeout = CVAR_INIT ("nettimeout", "350", CV_CALL|CV_SAVE, nettimeout_cons_t, NetTimeout_OnChange);
@@ -386,6 +392,49 @@ consvar_t cv_pause = CVAR_INIT ("pausepermission", "Server", CV_SAVE|CV_NETVAR|C
 consvar_t cv_mute = CVAR_INIT ("mute", "Off", CV_NETVAR|CV_CALL|CV_ALLOWLUA, CV_OnOff, Mute_OnChange);
 
 consvar_t cv_sleep = CVAR_INIT ("cpusleep", "1", CV_SAVE, sleeping_cons_t, NULL);
+
+consvar_t cv_simulate = CVAR_INIT("sim", "Yes", 0, CV_YesNo, NULL);
+
+consvar_t cv_powerupmusic = CVAR_INIT("powerupmusic", "Yes", 0, CV_YesNo, NULL);
+consvar_t cv_playerfullbright = CVAR_INIT("playerfullbright", "Yes", 0, CV_YesNo, NULL);
+
+static CV_PossibleValue_t simulateTics_cons_t[] = {{0, "MIN"}, {MAXSIMULATIONS - 1, "MAX"}, {0, NULL}};
+consvar_t cv_simulatetics = CVAR_INIT("simtics", "MAX", 0, simulateTics_cons_t, NULL);
+
+static CV_PossibleValue_t simulateculldistance_cons_t[] = {{0, "MIN"}, {10000, "MAX"}, {0, NULL}};
+consvar_t cv_simulateculldistance = CVAR_INIT("simcull", "MIN", 0, simulateculldistance_cons_t, NULL);
+
+static CV_PossibleValue_t siminaccuracy_cons_t[] = {{1, "MIN"}, {10, "MAX"}, {0, NULL}};
+consvar_t cv_siminaccuracy = CVAR_INIT("siminaccuracy", "MIN", 0, siminaccuracy_cons_t, NULL);
+
+static CV_PossibleValue_t netsteadyplayers_cons_t[] = {{0, "MIN"}, {MAXSIMULATIONS - 1, "MAX"}, {0, NULL}};
+consvar_t cv_netsteadyplayers = CVAR_INIT("simsteadyplayers", "0", 0, netsteadyplayers_cons_t, NULL);
+
+static CV_PossibleValue_t nettrails_cons_t[] = {{0, "MIN"}, {10, "MAX"}, {0, NULL}};
+consvar_t cv_nettrails = CVAR_INIT("simtrails", "5", 0, nettrails_cons_t, NULL);
+
+consvar_t cv_netslingdelay = CVAR_INIT("simslingdelay", "No", 0, CV_YesNo, NULL);
+
+static CV_PossibleValue_t netdelay_cons_t[] = {{0, "MIN"}, {250, "MAX"}, {0, NULL}};
+consvar_t cv_netdelay = CVAR_INIT("netdelay", "0", 0, netdelay_cons_t, NULL);
+
+static CV_PossibleValue_t netjitter_cons_t[] = {{0, "MIN"}, {5, "MAX"}, {0, NULL}};
+consvar_t cv_netjitter = CVAR_INIT("netjitter", "0", 0, netjitter_cons_t, NULL);
+
+consvar_t cv_netsmoothing = CVAR_INIT("netsmoothing", "Off", 0, CV_OnOff, NULL);
+
+consvar_t cv_netspikes = CVAR_INIT("netspikes", "Off", 0, CV_OnOff, NULL);
+
+static CV_PossibleValue_t netvariabletime_cons_t[] = {{-1, "MIN"}, {100, "MAX"}, {0, NULL}};
+consvar_t cv_netvariabletime = CVAR_INIT("netvariabletime", "-1", 0, netvariabletime_cons_t, NULL);
+
+static CV_PossibleValue_t debugsimulaterewind_cons_t[] = {{0, "MIN"}, {BACKUPTICS - 1, "MAX"}, {0, NULL}};
+consvar_t cv_debugsimulaterewind = CVAR_INIT("debugsimulaterewind", "0", 0, debugsimulaterewind_cons_t, NULL);
+
+static CV_PossibleValue_t timefudge_cons_t[] = {{0, "MIN"}, {100, "MAX"}, {0, NULL}};
+consvar_t cv_timefudge = CVAR_INIT("timefudge", "0", CV_CALL, timefudge_cons_t, TimeFudge_OnChange);
+
+consvar_t cv_autoupdatetimefudge = CVAR_INIT("autoupdatetimefudge", "Yes", 0, CV_YesNo, NULL);
 
 static CV_PossibleValue_t perfstats_cons_t[] = {
 	{0, "Off"}, {1, "Rendering"}, {2, "Logic"}, {3, "ThinkFrame"}, {4, "PreThinkFrame"}, {5, "PostThinkFrame"}, {0, NULL}};
@@ -535,6 +584,25 @@ void D_RegisterServerCommands(void)
 	COM_AddCommand("archivetest", Command_Archivetest_f, COM_LUA);
 #endif
 
+	COM_AddCommand("autotimefudge", Command_Autotimefudge, 0);
+
+	CV_RegisterVar(&cv_simulate);
+	CV_RegisterVar(&cv_simulatetics);
+	CV_RegisterVar(&cv_simulateculldistance);
+	CV_RegisterVar(&cv_siminaccuracy);
+	CV_RegisterVar(&cv_netdelay);
+	CV_RegisterVar(&cv_netjitter);
+	CV_RegisterVar(&cv_netsmoothing);
+	CV_RegisterVar(&cv_netspikes);
+	CV_RegisterVar(&cv_netsteadyplayers);
+	CV_RegisterVar(&cv_debugsimulaterewind);
+	CV_RegisterVar(&cv_timefudge);
+	CV_RegisterVar(&cv_autoupdatetimefudge);
+	CV_RegisterVar(&cv_nettrails);
+	CV_RegisterVar(&cv_netslingdelay);
+	CV_RegisterVar(&cv_netvariabletime);
+	CV_RegisterVar(&cv_playerfullbright);
+
 	COM_AddCommand("downloads", Command_Downloads_f, COM_LUA);
 
 	// for master server connection
@@ -648,6 +716,76 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_chatspamburst);
 }
 
+#include "i_net.h"
+
+extern int netUpdateFudge;
+void Command_Autotimefudge(void)
+{
+	UINT64 startTime = I_GetTimeUs();
+	static UINT64 packetTimeFudge[512];
+	int numReceivedPackets = 0;
+	int numSampleTics = 14;
+	int i;
+
+	if (server)
+	{
+		if (netgame)
+		{
+			CONS_Printf("Servers do not need a time fudge! Heck, why are you hosting with this exe anyway? You don't need to ;)\n");
+		}
+		return;
+	}
+
+	// New experimental version! Run a precise while loop that picks up packets instantly
+	while (I_GetTimeUs() - startTime < ((UINT64)numSampleTics * 1000000 / NEWTICRATE))
+	{
+		I_NetGet();
+		if (doomcom->remotenode != -1 && I_GetTimeUs() - startTime > (unsigned long long)2*1000000/NEWTICRATE) // wait a couple frames before recording
+		{
+			unsigned long long frame = I_GetTimeUs() * NEWTICRATE / 1000000;
+			packetTimeFudge[numReceivedPackets++] = (I_GetTimeUs() - frame * 1000000 / NEWTICRATE) * 100 * NEWTICRATE / 1000000
+				- netUpdateFudge; // gets the time fudge offset (0-100)
+		}
+	}
+
+	if (numReceivedPackets > 0)
+	{
+		int minOffset = 100, maxOffset = 0, averageOffset = 0;
+		int newTimeFudge;
+		int estimatedRange;
+
+		for (i = 0; i < numReceivedPackets; i++)
+		{
+			minOffset = min(minOffset, packetTimeFudge[i]);
+			maxOffset = max(maxOffset, packetTimeFudge[i]);
+		}
+
+		if (maxOffset - minOffset > 50)
+		{
+			// say maxOffset = 90 and minOffset = 20, we want the average to be 30...
+			maxOffset = maxOffset - 100;
+
+			if (minOffset > maxOffset)
+			{
+				int swap = maxOffset;
+				maxOffset = minOffset;
+				minOffset = swap;
+			}
+		}
+
+		estimatedRange = maxOffset - minOffset;
+		averageOffset = (maxOffset + minOffset) / 2;
+
+		CONS_Printf("%i packets, min: %d max: %d avg: %d est. range: %d (mynetupdate: %i)\n", numReceivedPackets, minOffset, maxOffset, averageOffset,
+			estimatedRange, netUpdateFudge);
+
+		newTimeFudge = (cv_timefudge.value + averageOffset + 50) % 100;
+		CONS_Printf("New time fudge: %i%%\n", newTimeFudge);
+
+		CV_SetValue(&cv_timefudge, newTimeFudge);
+	}
+}
+
 // =========================================================================
 //                           CLIENT STARTUP
 // =========================================================================
@@ -747,6 +885,7 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_rollingdemos);
 	CV_RegisterVar(&cv_netstat);
 	CV_RegisterVar(&cv_netticbuffer);
+	CV_RegisterVar(&cv_netsimstat);
 
 #ifdef NETGAME_DEVMODE
 	CV_RegisterVar(&cv_fishcake);
@@ -4431,6 +4570,11 @@ static void SoundTest_OnChange(void)
 
 	S_StopSounds();
 	S_StartSound(NULL, cv_soundtest.value);
+}
+
+static void TimeFudge_OnChange(void)
+{
+	I_SetTime(I_GetTime(), cv_timefudge.value, true);
 }
 
 static void AutoBalance_OnChange(void)

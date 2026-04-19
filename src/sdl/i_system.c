@@ -2239,6 +2239,16 @@ ticcmd_t *I_BaseTiccmd2(void)
 // returns time in 1/TICRATE second tics
 //
 
+/*
+void I_StartupTimer(void)
+{
+	timer_frequency = SDL_GetPerformanceFrequency();
+	tic_epoch       = SDL_GetPerformanceCounter();
+
+	frame_frequency   = timer_frequency / (double)NEWTICRATE;
+}
+*/
+
 static Uint64 timer_frequency;
 
 precise_t I_GetPreciseTime(void)
@@ -2251,11 +2261,25 @@ UINT64 I_GetPrecisePrecision(void)
 	return SDL_GetPerformanceFrequency();
 }
 
+int I_PreciseToMicros(precise_t d)
+{
+	// d is going to be converted into a double. So remove the highest bits
+	// to avoid loss of precision in the lower bits, for the (probably rare) case
+	// that the higher bits are actually used.
+	d &= ((precise_t)1 << 53) - 1; // The mantissa of a double can handle 53 bits at most.
+	// The resulting double from the calculation is converted first to UINT64 to avoid overflow,
+	// which is undefined behaviour when converting floating point values to integers.
+	return (int)(UINT64)(d / (timer_frequency / 1000000.0));
+}
+
 static UINT32 frame_rate;
 
-static double frame_frequency;
+double frame_frequency;
 static UINT64 frame_epoch;
 static double elapsed_frames;
+
+int8_t lastTimeFudge = -1;
+static double elapsed;
 
 static void I_InitFrameTime(const UINT64 now, const UINT32 cap)
 {
@@ -2297,6 +2321,50 @@ double I_GetFrameTime(void)
 
 	frame_epoch = now; // moving epoch
 	return elapsed_frames;
+}
+
+//
+// I_SetTime
+// Sets the time, used to fudge timers for better network synching
+//
+// static unsigned int starttickcount = 0;
+void I_SetTime(tic_t tic, int fudge, boolean useAbsoluteFudge)
+{
+	//
+	// unsigned int oldTickCount = starttickcount;
+	// int64_t oldBaseTime = basetime;
+
+	
+
+	// if (starttickcount)
+	// {
+	// 	starttickcount = SDL_GetTicks() - (unsigned int)((UINT64)tic * 1000 / NEWTICRATE + 1000 * fudge / TICRATE / 100);
+	// 	if (useAbsoluteFudge)
+	// 	{
+	// 		starttickcount = starttickcount * NEWTICRATE / 1000 * 1000 * NEWTICRATE + 1000 * fudge / NEWTICRATE / 100;
+	// 	}
+	// }
+	tic = max(tic, SDL_GetTicks());
+
+	// const Uint64 currtime = SDL_GetPerformanceCounter();
+	// elapsed = currtime - (tic * frame_frequency + (fudge / 100) * frame_frequency);
+
+	if (useAbsoluteFudge)
+		elapsed = elapsed + (fudge / 100) * frame_frequency;
+	// return;
+	
+}
+
+
+//
+// I_GetTimeUs
+// returns time in 1/TICRATE second tics
+// tells how much time elapsed in OUR machine only(?)
+//
+UINT64 I_GetTimeUs(void) 
+{
+	return (SDL_GetPerformanceCounter()/ frame_frequency - elapsed);
+	// return 0;
 }
 
 //

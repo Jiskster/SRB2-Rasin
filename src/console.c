@@ -55,6 +55,7 @@ static boolean con_started = false; // console has been initialised
        boolean con_refresh = false; // screen needs refreshing
 static boolean con_forcepic = true; // at startup toggle console translucency when first off
        boolean con_recalc;          // set true when screen size has changed
+	   boolean con_muted = false;   // mutes the console (terminal output still produces output)
 
 static tic_t con_tick; // console ticker for blinking prompt cursor
                         // con_scrollup should use time (currenttime - lasttime)..

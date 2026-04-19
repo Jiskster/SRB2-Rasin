@@ -51,6 +51,17 @@ typedef enum
 	KR_IDLE          = 7, //Remained still for too long
 } kickreason_t;
 
+// Player movement histories for simulated gamestates
+typedef struct
+{
+	// stores historical simulated positions where 0 is the real game position and simtic-gametic is the latest simulated position
+	fixed_t histx[MAXSIMULATIONS + 1], histy[MAXSIMULATIONS + 1], histz[MAXSIMULATIONS + 1];
+
+	// stores the final simulated position for each simulated gametic
+	fixed_t simx[MAXSIMULATIONS], simy[MAXSIMULATIONS], simz[MAXSIMULATIONS];
+
+} steadyplayer_t;
+
 /* the max number of name changes in some time period */
 #define MAXNAMECHANGES (5)
 #define NAMECHANGERATE (60*TICRATE)
@@ -65,6 +76,10 @@ extern SINT8 servernode;
 extern tic_t maketic;
 extern tic_t neededtic;
 extern INT16 consistancy[BACKUPTICS];
+
+extern boolean issimulation; // whether the currently executed tic is part of a simulated gamestate
+extern steadyplayer_t steadyplayers[MAXPLAYERS]; // Player movement histories for simulated gamestates
+extern int rttJitter; //Round Trip Time jitter
 
 void Command_Ping_f(void);
 extern tic_t connectiontimeout;
@@ -107,7 +122,12 @@ boolean Playing(void);
 void D_QuitNetGame(void);
 
 //? How many ticks to run?
-boolean TryRunTics(tic_t realtic);
+boolean TryRunTics(tic_t realtic, tic_t entertic);
+
+// Invalidates save states used in simulations
+void InvalidateSavestates();
+
+extern void EncodeTiccmdTime(ticcmd_t* ticcmd, tic_t time);
 
 // extra data for lmps
 // these functions scare me. they contain magic.

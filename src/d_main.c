@@ -75,6 +75,7 @@
 #include "filesrch.h" // refreshdirmenu
 #include "g_input.h" // tutorial mode control scheming
 #include "m_perfstats.h"
+#include "netcode/i_net.h" // for netvariabletime (srb2netplus)
 #include "m_random.h"
 #include "command.h"
 
@@ -681,6 +682,28 @@ static void D_Display(void)
 			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-10, V_YELLOWMAP, s);
 		}
 
+		//netsimstat srb2netplus
+		if (cv_netsimstat.value && netDebugText[0] != 0)
+		{
+			const char* str = netDebugText;
+			int y = 0;
+
+			while (str != NULL)
+			{
+				char temp[1024];
+				const char* nextStr = strstr(str + 1, "\n");
+				int len = nextStr ? nextStr - str : strlen(str);
+
+				memcpy(temp, str, len);
+				temp[len] = 0;
+
+				V_DrawRightAlignedSmallString(BASEVIDWIDTH, y, V_YELLOWMAP, temp);
+
+				y += 5;
+				str = nextStr ? nextStr + 1 : NULL;
+			}
+		}
+
 		if (cv_perfstats.value)
 		{
 			M_DrawPerfStats();
@@ -854,7 +877,7 @@ static void D_RunFrame(void)
 				realtics = 1;
 
 			// process tics (but maybe not if realtic == 0)
-			TryRunTics(realtics);
+			TryRunTics(realtics, entertic);
 
 			if (lastdraw || singletics || gametic > rendergametic)
 			{

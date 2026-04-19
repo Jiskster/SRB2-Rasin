@@ -21,6 +21,8 @@
 #pragma interface
 #endif
 
+extern double frame_frequency;
+
 /**	\brief max quit functions
 */
 #define MAX_QUIT_FUNCS     16
@@ -42,12 +44,18 @@ extern UINT8 keyboard_started;
 */
 size_t I_GetFreeMem(size_t *total);
 
+UINT64 I_GetTimeUs(void);
+
+int I_PreciseToMicros(precise_t d);
+
 /**	\brief	Returns precise time value for performance measurement. The precise
             time should be a monotonically increasing counter, and will wrap.
 			precise_t is internally represented as an unsigned integer and
 			integer arithmetic may be used directly between values of precise_t.
   */
 precise_t I_GetPreciseTime(void);
+
+void I_SetTime(tic_t tic, int fudge, boolean useAbsoluteFudge);
 
 /**	\brief	Fills a buffer with random data, returns amount of data obtained.
   */

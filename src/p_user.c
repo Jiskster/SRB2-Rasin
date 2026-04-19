@@ -4355,6 +4355,10 @@ firenormal:
 	{
 		if (mo->flags & MF_MISSILE && mo->flags2 & MF2_RAILRING)
 		{
+			if (cv_netslingdelay.value && issimulation && (tic_t)cv_netsteadyplayers.value >= targetsimtic - simtic && mo->target == players[consoleplayer].mo)
+				// don't fire any projectiles yet!
+				return;
+				
 			const boolean nblockmap = !(mo->flags & MF_NOBLOCKMAP);
 			for (i = 0; i < 256; i++)
 			{
