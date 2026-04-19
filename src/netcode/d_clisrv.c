@@ -1557,8 +1557,9 @@ boolean TryRunTics(tic_t realtics, tic_t entertic)
 						if (neededtic == gametic)
 						{
 							// store this real state (hopefully accurate to the one from server)
-							P_SaveGameState(save_p, &gameStateBuffer[gametic % MAXLOCALSAVESTATES]);
-							gameStateBufferIsValid[gametic % MAXLOCALSAVESTATES] = true;
+							//netplus:fixme (Won't do proper simulations if below is commented out, its commented out because it freezes)
+							//P_SaveGameState(save_p, &gameStateBuffer[gametic % MAXLOCALSAVESTATES]);
+							//gameStateBufferIsValid[gametic % MAXLOCALSAVESTATES] = true;
 						}
 						// store the ticcmds used during this game tic for simulations
 						// TODO optimize it in a way that they won't be saved when we finished chasing to server's gamestate
