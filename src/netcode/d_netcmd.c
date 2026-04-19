@@ -400,6 +400,7 @@ consvar_t cv_playerfullbright = CVAR_INIT("playerfullbright", "Yes", 0, CV_YesNo
 
 static CV_PossibleValue_t simulateTics_cons_t[] = {{0, "MIN"}, {MAXSIMULATIONS - 1, "MAX"}, {0, NULL}};
 consvar_t cv_simulatetics = CVAR_INIT("simtics", "MAX", 0, simulateTics_cons_t, NULL);
+consvar_t cv_simmisstics = CVAR_INIT("simmisstics", "Yes", 0, CV_YesNo, NULL);
 
 static CV_PossibleValue_t simulateculldistance_cons_t[] = {{0, "MIN"}, {10000, "MAX"}, {0, NULL}};
 consvar_t cv_simulateculldistance = CVAR_INIT("simcull", "MIN", 0, simulateculldistance_cons_t, NULL);
@@ -588,6 +589,7 @@ void D_RegisterServerCommands(void)
 
 	CV_RegisterVar(&cv_simulate);
 	CV_RegisterVar(&cv_simulatetics);
+	CV_RegisterVar(&cv_simmisstics);
 	CV_RegisterVar(&cv_simulateculldistance);
 	CV_RegisterVar(&cv_siminaccuracy);
 	CV_RegisterVar(&cv_netdelay);
