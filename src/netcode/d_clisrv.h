@@ -128,7 +128,7 @@ boolean TryRunTics(tic_t realtic, tic_t entertic);
 void InvalidateSavestates();
 
 extern void EncodeTiccmdTime(ticcmd_t* ticcmd, tic_t time);
-
+extern void AdjustSimulatedTiccmdInputs(ticcmd_t* cmds);
 // extra data for lmps
 // these functions scare me. they contain magic.
 /*boolean AddLmpExtradata(UINT8 **demo_p, INT32 playernum);

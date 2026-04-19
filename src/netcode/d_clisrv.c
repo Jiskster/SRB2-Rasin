@@ -119,7 +119,7 @@ void EncodeTiccmdTime(ticcmd_t* ticcmd, tic_t time);
 tic_t DecodeTiccmdTime(const ticcmd_t* ticcmd);
 boolean CompareTiccmd(const ticcmd_t* a, const ticcmd_t* b);
 
-static void AdjustSimulatedTiccmdInputs(ticcmd_t* cmds);
+void AdjustSimulatedTiccmdInputs(ticcmd_t* cmds);
 
 static void RunSimulations();
 // Net simulation stuff END
@@ -1331,9 +1331,10 @@ void DetermineNetConditions();
 // static void PerformDebugRewinds();
 boolean FindMatchingTics(int* liveTicOut, int* gameTicOut);
 
+save_t *save_p;
+
 boolean TryRunTics(tic_t realtics, tic_t entertic)
 {
-	save_t *save_p;
 	boolean ticking;
 
 	// the machine has lagged but it is not so bad
@@ -2390,7 +2391,7 @@ void CorrectPlayerTargeting(ticcmd_t* cmds)
 	}
 }
 
-static void AdjustSimulatedTiccmdInputs(ticcmd_t* cmds)
+void AdjustSimulatedTiccmdInputs(ticcmd_t* cmds)
 {
 	if (server || simtic == gametic)
 		return;

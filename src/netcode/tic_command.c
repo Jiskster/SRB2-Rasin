@@ -292,6 +292,9 @@ void CL_SendClientCmd(void)
 	}
 	else if (gamestate != GS_NULL && (addedtogame || dedicated))
 	{
+		ticcmd_t adjustedCmd = localcmds;
+		AdjustSimulatedTiccmdInputs(&adjustedCmd); // adjust ticcmds for simulations
+
 		packetsize = sizeof (clientcmd_pak);
 		G_MoveTiccmd(&netbuffer->u.clientpak.cmd, &localcmds, 1);
 		netbuffer->u.clientpak.consistancy = SHORT(consistancy[gametic%BACKUPTICS]);
@@ -426,7 +429,7 @@ void Local_Maketic(INT32 realtics)
 						// game responder calls HU_Responder, AM_Responder,
 						// and G_MapEventsToControls
 	// }
-	
+
 	if (!dedicated)
 		rendergametic = gametic;
 	// translate inputs (keyboard/mouse/joystick) into game controls
