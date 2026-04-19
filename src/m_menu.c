@@ -1665,7 +1665,9 @@ static menuitem_t OP_NetPlusOptionsMenu[] =
 	{IT_CVAR | IT_STRING, NULL, "Player jitter reduction tics",     &cv_netsteadyplayers,   16}, //simsteadyplayers
 	{IT_CVAR | IT_STRING, NULL, "Turn off ring toss prediction",     &cv_netslingdelay,   21}, //simslingdelay
 	{IT_CVAR | IT_STRING, NULL, "Objects prediction distance",     &cv_simulateculldistance, 26}, //simcull
-	{IT_CVAR | IT_STRING, NULL, "Prediction inaccuracy (beta)",     &cv_siminaccuracy, 31}, //siminaccuracy
+		// {IT_CVAR | IT_STRING, NULL, "Prediction inaccuracy (beta)",     &cv_siminaccuracy, 31}, //siminaccuracy
+	{IT_CVAR | IT_STRING, NULL, "Predict missed tics",     &cv_simmisstics, 31}, //siminaccuracy
+	// simmisstics
 
 	{IT_HEADER, NULL, "Visuals", NULL, 41},
 	{IT_CVAR | IT_STRING, NULL, "Player trail lifetime",     &cv_nettrails,      46}, //simtrails
