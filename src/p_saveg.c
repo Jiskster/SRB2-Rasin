@@ -6165,7 +6165,7 @@ FUNCINLINE static ATTRINLINE boolean P_NetUnArchiveMisc(save_t *save_p, boolean 
 
 	tokenlist = P_ReadUINT32(save_p);
 
-	if (!P_LoadLevel(true, reloading))
+	if (!reloading && !P_LoadLevel(true, reloading))
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Can't load the level!\n"));
 		return false;
