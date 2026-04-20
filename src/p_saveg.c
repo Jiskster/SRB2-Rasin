@@ -6733,7 +6733,7 @@ void P_SaveGameState(save_t *save_p, savestate_t* savestate)
 		savestate->buffer = Z_Malloc(10 * 1024 * 1024, PU_LEVEL, NULL); //ten megabytes?
 	}
 
-	save_p = savestate->buffer;
+	save_p->buf = savestate->buffer;
 
 	P_WriteINT16(save_p, gamemap);
 	P_WriteINT32(save_p, globalmobjnum);
@@ -6798,7 +6798,7 @@ boolean P_LoadGameState(save_t *save_p, const savestate_t* savestate)
 		CONS_Alert(CONS_ERROR, "Hell, we are going to load the invalid savestate!!!");
 	}
 
-	save_p = ((unsigned char*)savestate->buffer);
+	save_p->buf = ((unsigned char*)savestate->buffer);
 
 	savedGameMap = P_ReadINT16(save_p);
 

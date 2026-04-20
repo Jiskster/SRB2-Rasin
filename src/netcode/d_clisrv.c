@@ -1331,10 +1331,12 @@ void DetermineNetConditions();
 // static void PerformDebugRewinds();
 boolean FindMatchingTics(int* liveTicOut, int* gameTicOut);
 
-save_t *save_p;
+
 
 boolean TryRunTics(tic_t realtics, tic_t entertic)
 {
+	save_t *save_p;
+	
 	boolean ticking;
 
 	// the machine has lagged but it is not so bad
@@ -1558,8 +1560,8 @@ boolean TryRunTics(tic_t realtics, tic_t entertic)
 						{
 							// store this real state (hopefully accurate to the one from server)
 							//netplus:fixme (Won't do proper simulations if below is commented out, its commented out because it freezes)
-							//P_SaveGameState(save_p, &gameStateBuffer[gametic % MAXLOCALSAVESTATES]);
-							//gameStateBufferIsValid[gametic % MAXLOCALSAVESTATES] = true;
+							P_SaveGameState(save_p, &gameStateBuffer[gametic % MAXLOCALSAVESTATES]);
+							gameStateBufferIsValid[gametic % MAXLOCALSAVESTATES] = true;
 						}
 						// store the ticcmds used during this game tic for simulations
 						// TODO optimize it in a way that they won't be saved when we finished chasing to server's gamestate
@@ -1616,6 +1618,11 @@ boolean TryRunTics(tic_t realtics, tic_t entertic)
 			// we're gonna need more debugs...
 			MakeNetDebugString();
 		}
+
+	/*
+	if (save_p.buf != NULL)
+		Z_Free(save_p.buf);
+	*/
 }
 //bitten fix this shit
 /*
