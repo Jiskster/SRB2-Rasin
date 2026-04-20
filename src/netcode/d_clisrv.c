@@ -1399,14 +1399,6 @@ boolean TryRunTics(tic_t realtics, tic_t entertic)
 			hu_stopped = false;
 	}
 
-	/* netplus:fixme
-	if (player_joining)
-	{
-		if (realtics)
-			hu_stopped = true;
-		return false;
-	}
-	*/
 	if (simtic > gametic && !canSimulate)
 	{
 		// if we can't simulate anymore, we ought to reload a valid "server's"
@@ -1559,7 +1551,6 @@ boolean TryRunTics(tic_t realtics, tic_t entertic)
 						if (neededtic == gametic)
 						{
 							// store this real state (hopefully accurate to the one from server)
-							//netplus:fixme (Won't do proper simulations if below is commented out, its commented out because it freezes)
 							P_SaveGameState(save_p, &gameStateBuffer[gametic % MAXLOCALSAVESTATES]);
 							gameStateBufferIsValid[gametic % MAXLOCALSAVESTATES] = true;
 						}
