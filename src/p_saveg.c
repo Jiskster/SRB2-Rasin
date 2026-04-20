@@ -6830,7 +6830,7 @@ boolean P_LoadGameState(save_t *save_p, const savestate_t* savestate)
 		return false;
 	}
 
-	save_p->buf = ((unsigned char*)savestate->buffer);
+	save_p->buf = savestate->buffer;
 
 	savedGameMap = P_ReadINT16(save_p);
 
