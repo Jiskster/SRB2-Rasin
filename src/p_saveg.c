@@ -828,7 +828,7 @@ static void P_LocalArchivePlayers(save_t *save_p)
 
 		P_WriteMem(save_p, &players[i], sizeof(player_t));
 
-		player_t* player = &((player_t*)save_p)[-1];
+		player_t* player = (player_t*)(save_p->buf + save_p->pos - sizeof(player_t));
 
 #define RELINK(var) if (var) var = (mobj_t*)var->mobjnum
 		RELINK(player->capsule);
@@ -4538,7 +4538,7 @@ static void P_LocalArchiveThinkers(save_t *save_p)
 			// relink saved pointers with saved mobjnums
 			if (j == tc_mobj)
 			{
-				savedMobj = &((mobj_t*)save_p)[-1];
+				savedMobj = (mobj_t*)(save_p->buf + save_p->pos - sizeof(mobj_t));
 				RELINK(savedMobj->tracer);
 				RELINK(savedMobj->target);
 				RELINK(savedMobj->hnext);
@@ -4577,7 +4577,7 @@ static void P_LocalArchiveThinkers(save_t *save_p)
 				P_WriteUINT8(save_p, tc_mobj);
 				P_WriteMem(save_p, thing, specialDefs[tc_mobj].size);
 
-				savedMobj = &((mobj_t*)save_p)[-1];
+				savedMobj = (mobj_t*)(save_p->buf + save_p->pos - sizeof(mobj_t));
 				RELINK(savedMobj->tracer);
 				RELINK(savedMobj->target);
 				RELINK(savedMobj->hnext);
@@ -6742,7 +6742,7 @@ void P_SaveGameState(save_t *save_p, savestate_t* savestate)
 	P_WriteINT16(save_p, gamemap);
 	P_WriteINT32(save_p, globalmobjnum);
 
-	CV_SaveNetVars(&save_p);
+	CV_SaveNetVars(save_p);
 
 	// assign mobj nums for pointer relinking
 	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
