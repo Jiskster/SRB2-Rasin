@@ -2435,11 +2435,15 @@ void G_Ticker(boolean run)
 			if (titledemo)
 				F_TitleDemoTicker();
 			P_Ticker(run); // tic the game
-			ST_Ticker(run);
-			F_TextPromptTicker();
-			AM_Ticker();
-			HU_Ticker();
-
+			//do not draw any GUI during sims
+			if ((issimulation && finaltargetsimtic == simtic) || (!canSimulate))
+			{
+				ST_Ticker(run);
+				F_TextPromptTicker();
+				AM_Ticker();
+				HU_Ticker();
+			}
+			
 			break;
 
 		case GS_INTERMISSION:
