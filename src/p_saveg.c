@@ -6717,6 +6717,8 @@ boolean P_LoadNetGame(save_t *save_p, boolean reloading)
 extern UINT64 saveStateBenchmark;
 extern UINT64 loadStateBenchmark;
 
+#define SAVEGAMESIZE (768*1024)
+
 // P_SaveGameState is a within-level-only mechanism for saving the game state. It must not be used cross level. Used for simulation backtracking.
 // It uses a mixture of existing NetArchive functions and faster LocalArchive functions to do the job
 
@@ -6733,7 +6735,9 @@ void P_SaveGameState(save_t *save_p, savestate_t* savestate)
 		savestate->buffer = Z_Malloc(10 * 1024 * 1024, PU_LEVEL, NULL); //ten megabytes?
 	}
 
+	save_p->size = SAVEGAMESIZE;
 	save_p->buf = savestate->buffer;
+	save_p->pos = 0;
 
 	P_WriteINT16(save_p, gamemap);
 	P_WriteINT32(save_p, globalmobjnum);

@@ -1335,7 +1335,7 @@ boolean FindMatchingTics(int* liveTicOut, int* gameTicOut);
 
 boolean TryRunTics(tic_t realtics, tic_t entertic)
 {
-	save_t *save_p;
+	save_t *save_p = malloc(sizeof(save_t));
 	
 	boolean ticking;
 
@@ -1618,11 +1618,6 @@ boolean TryRunTics(tic_t realtics, tic_t entertic)
 			// we're gonna need more debugs...
 			MakeNetDebugString();
 		}
-
-	/*
-	if (save_p.buf != NULL)
-		Z_Free(save_p.buf);
-	*/
 }
 //bitten fix this shit
 /*
