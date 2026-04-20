@@ -19,7 +19,6 @@
 #endif
 
 #include "tables.h"
-
 #define NEWSKINSAVES (INT16_MAX) // TODO: 2.3: Delete (Purely for backwards compatibility)
 
 // Persistent storage/archiving.
@@ -42,7 +41,6 @@ typedef struct
 void P_SaveGame(save_t *save_p, INT16 mapnum);
 void P_SaveNetGame(save_t *save_p, boolean resending);
 void P_SaveGameState(save_t *save_p, savestate_t* savestate);
-mobj_t *P_FindNewPosition_Hashtable(UINT32 oldposition);
 void P_GameStateFreeMemory(savestate_t* savestate);
 boolean P_LoadGame(save_t *save_p, INT16 mapoverride);
 boolean P_LoadNetGame(save_t *save_p, boolean reloading);

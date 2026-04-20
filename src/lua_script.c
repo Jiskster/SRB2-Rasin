@@ -43,6 +43,8 @@
 
 #include "hu_stuff.h"
 
+mobj_t *P_FindNewPosition_Hashtable(UINT32 oldposition);
+
 lua_State *gL = NULL;
 
 // List of internal libraries to load from SRB2
