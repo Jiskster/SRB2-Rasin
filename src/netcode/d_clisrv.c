@@ -1763,11 +1763,8 @@ int DetermineSimulationAmount()
 
 	if ((nextTargetSimTic >= 0) && (liveTic % simInaccuracy == 0))
 		targetsimtic = nextTargetSimTic;
-
-	/* netplus:fixme
 	if (!cv_jittersmoothing.value)
 		return targetsimtic - simtic;
-	*/
 	numToSimulateHistory[liveTic % MAXSIMULATIONS] = targetsimtic - simtic;
 	for (int i = 0; i < MAXSIMULATIONS; i++)
 	if (numToSimulateHistory[i] == 0)

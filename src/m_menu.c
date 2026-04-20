@@ -1657,30 +1657,32 @@ static menuitem_t OP_MonitorToggleMenu[] =
 	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Eggman Box",        &cv_eggmanbox,    140},
 };
 
+//NetPlus options menu
 static menuitem_t OP_NetPlusOptionsMenu[] =
 {
 	{IT_HEADER, NULL, "Client Side Prediction", NULL, 0},
 	{IT_CVAR | IT_STRING, NULL, "Enable prediction", &cv_simulate,   6}, //sim
 	{IT_CVAR | IT_STRING, NULL, "Cancelled control lag tics", &cv_simulatetics,   11}, //simtics
-	{IT_CVAR | IT_STRING, NULL, "Player jitter reduction tics",     &cv_netsteadyplayers,   16}, //simsteadyplayers
-	{IT_CVAR | IT_STRING, NULL, "Turn off ring toss prediction",     &cv_netslingdelay,   21}, //simslingdelay
-	{IT_CVAR | IT_STRING, NULL, "Objects prediction distance",     &cv_simulateculldistance, 26}, //simcull
-		// {IT_CVAR | IT_STRING, NULL, "Prediction inaccuracy (beta)",     &cv_siminaccuracy, 31}, //siminaccuracy
-	{IT_CVAR | IT_STRING, NULL, "Predict missed tics",     &cv_simmisstics, 31}, //siminaccuracy
+	{IT_CVAR | IT_STRING, NULL, "Jitter smoothing", &cv_jittersmoothing,   16}, //simtics
+	{IT_CVAR | IT_STRING, NULL, "Player jitter reduction tics",     &cv_netsteadyplayers,   21}, //simsteadyplayers
+	{IT_CVAR | IT_STRING, NULL, "Turn off ring toss prediction",     &cv_netslingdelay,   26}, //simslingdelay
+	{IT_CVAR | IT_STRING, NULL, "Objects prediction distance",     &cv_simulateculldistance, 31}, //simcull
+	// {IT_CVAR | IT_STRING, NULL, "Prediction inaccuracy (beta)",     &cv_siminaccuracy, 31}, //siminaccuracy
+	{IT_CVAR | IT_STRING, NULL, "Predict missed tics",     &cv_simmisstics, 36}, //siminaccuracy
 	// simmisstics
 
-	{IT_HEADER, NULL, "Visuals", NULL, 41},
-	{IT_CVAR | IT_STRING, NULL, "Player trail lifetime",     &cv_nettrails,      46}, //simtrails
-	{IT_CVAR | IT_STRING, NULL, "Players always bright",     &cv_playerfullbright,      51}, //playerfullbright
+	{IT_HEADER, NULL, "Visuals", NULL, 46},
+	{IT_CVAR | IT_STRING, NULL, "Player trail lifetime",     &cv_nettrails,      51}, //simtrails
+	{IT_CVAR | IT_STRING, NULL, "Players always bright",     &cv_playerfullbright,      56}, //playerfullbright
 
-	{IT_HEADER, NULL, "Server and client timers synch", NULL, 61},
+	{IT_HEADER, NULL, "Server and client timers synch", NULL, 66},
 	// {IT_CVAR | IT_STRING, NULL, "Enable auto time fudging",    M_NetPlusAutoTimeFudge,   130}, //autotimefudge
 	// {IT_CALL | IT_STRING, NULL, "Force reducing game jitter",    M_NetPlusAutoTimeFudge,   130}, //autotimefudge
-	{IT_CVAR | IT_STRING, NULL, "Automatically sync timers", &cv_autoupdatetimefudge,   66}, //autoupdatetimefudge
-	{IT_CALL | IT_STRING, NULL, "Reduce game jitter manualy",    M_NetPlusAutoTimeFudge,   71}, //autotimefudge
+	{IT_CVAR | IT_STRING, NULL, "Automatically sync timers", &cv_autoupdatetimefudge,   71}, //autoupdatetimefudge
+	{IT_CALL | IT_STRING, NULL, "Reduce game jitter manualy",    M_NetPlusAutoTimeFudge,   76}, //autotimefudge
 
-	{IT_HEADER, NULL, "Debug", NULL, 81},
-	{IT_CVAR | IT_STRING, NULL, "Simulation stats",      &cv_netsimstat, 86}, //netsimstat
+	{IT_HEADER, NULL, "Debug", NULL, 86},
+	{IT_CVAR | IT_STRING, NULL, "Simulation stats",      &cv_netsimstat, 91}, //netsimstat
 };
 
 // ==========================================================================

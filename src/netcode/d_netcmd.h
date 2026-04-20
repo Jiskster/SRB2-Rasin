@@ -114,6 +114,7 @@ extern consvar_t cv_showping;
 extern consvar_t cv_simulate;
 extern consvar_t cv_simulatetics;
 extern consvar_t cv_simmisstics;
+extern consvar_t cv_jittersmoothing;
 extern consvar_t cv_simulateculldistance;
 extern consvar_t cv_siminaccuracy;
 extern consvar_t cv_netdelay;
