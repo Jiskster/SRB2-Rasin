@@ -2361,7 +2361,7 @@ void I_SetTime(tic_t tic, int fudge, boolean useAbsoluteFudge)
 // returns time in 1/TICRATE second tics
 // tells how much time elapsed in OUR machine only(?)
 //
-UINT64 I_GetTimeUs(void) 
+precise_t I_GetTimeUs(void) 
 {
 	return (SDL_GetPerformanceCounter()/ frame_frequency - elapsed);
 	// return 0;
