@@ -6760,7 +6760,6 @@ void P_SaveGameState(save_t *save_p, savestate_t* savestate)
 
 	save_p->size = (10 * 1024 * 1024);
 	save_p->buf = savestate->buffer;
-	save_p->pos = 0;
 
 	P_WriteINT16(save_p, gamemap);
 	P_WriteINT32(save_p, globalmobjnum);
@@ -6808,6 +6807,7 @@ void P_SaveGameState(save_t *save_p, savestate_t* savestate)
 		P_NetArchiveColormaps(save_p);
 		P_NetArchiveWaypoints(save_p);
 	}
+
 	LUA_Archive(save_p);
 
 	P_ArchiveLuabanksAndConsistency(save_p);

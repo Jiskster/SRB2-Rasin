@@ -1331,13 +1331,12 @@ void DetermineNetConditions();
 // static void PerformDebugRewinds();
 boolean FindMatchingTics(int* liveTicOut, int* gameTicOut);
 
-save_t *save_p = NULL;
+
 
 boolean TryRunTics(tic_t realtics, tic_t entertic)
 {	
-	if (!save_p)
-		save_p = malloc(sizeof(save_t));
-		
+	save_t *save_p = calloc(1, sizeof(save_t)); // unsafe but whatever
+
 	boolean ticking;
 
 	// the machine has lagged but it is not so bad
@@ -1411,6 +1410,7 @@ boolean TryRunTics(tic_t realtics, tic_t entertic)
 		{
 			if (!(gamestate == GS_INTERMISSION))
 				P_LoadGameState(save_p, &gameStateBuffer[gametic % MAXLOCALSAVESTATES]);
+				
 			// Most of the time the RandSeed is correct (e.g. lua map voting)
 			// because we always load "real state" before making sims
 			// so setting it up explicitly for the intermission isn't needed.
