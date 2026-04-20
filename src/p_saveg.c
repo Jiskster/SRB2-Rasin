@@ -6757,9 +6757,10 @@ void P_SaveGameState(save_t *save_p, savestate_t* savestate)
 	{
 		savestate->buffer = Z_Malloc(10 * 1024 * 1024, PU_LEVEL, NULL); //ten megabytes?
 	}
-
-	save_p->size = (10 * 1024 * 1024);
+	
 	save_p->buf = savestate->buffer;
+	save_p->pos = 0;
+	save_p->size = (10 * 1024 * 1024);
 
 	P_WriteINT16(save_p, gamemap);
 	P_WriteINT32(save_p, globalmobjnum);
