@@ -39,6 +39,8 @@
 #include "doomstat.h"
 #include "g_state.h"
 
+#include "hashtable.h"
+
 #include "hu_stuff.h"
 
 lua_State *gL = NULL;
@@ -1605,7 +1607,7 @@ static UINT8 UnArchiveValue(save_t *save_p, int TABLESINDEX)
 		LUA_PushUserdata(gL, &states[P_ReadUINT16(save_p)], META_STATE);
 		break;
 	case ARCH_MOBJ:
-		LUA_PushUserdata(gL, P_FindNewPosition(P_ReadUINT32(save_p)), META_MOBJ);
+		LUA_PushUserdata(gL, P_FindNewPosition_Hashtable(P_ReadUINT32(save_p)), META_MOBJ);
 		break;
 	case ARCH_PLAYER:
 		LUA_PushUserdata(gL, &players[P_ReadUINT8(save_p)], META_PLAYER);
@@ -1818,17 +1820,46 @@ void LUA_UnArchive(save_t *save_p)
 		UnArchiveExtVars(save_p, &players[i]);
 	}
 
-	do {
-		mobjnum = P_ReadUINT32(save_p); // read a mobjnum
-		for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
+	mobjnum = P_ReadUINT32(save_p); // read a mobjnum
+	while(mobjnum != UINT32_MAX) // repeat until end of mobjs marker.
+	{
+		th = mobjnum_ht_linkedList_Find(mobjnum);
+		if (th && ((mobj_t *)th)->mobjnum == mobjnum)
 		{
-			if (th->removing)
-				continue;
-			if (((mobj_t *)th)->mobjnum != mobjnum) // find matching mobj
-				continue;
-			UnArchiveExtVars(save_p, th); // apply variables
+			// hashHits++;
+			UnArchiveExtVars(save_p, th);
 		}
-	} while(mobjnum != UINT32_MAX); // repeat until end of mobjs marker.
+		else
+		{
+			// hashmiss++;
+			
+			for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
+			{
+				if (th->function == (actionf_p1)P_RemoveThinkerDelayed)
+					continue;
+				if (((mobj_t *)th)->mobjnum != mobjnum) // find matching mobj
+					continue;
+				UnArchiveExtVars(save_p, th); // apply variables
+			}
+		}
+		mobjnum = P_ReadUINT32(save_p); // read a mobjnum
+	} 
+	
+	// mobjnum = READUINT32(save_p);
+	// while(mobjnum != UINT32_MAX) // repeat until end of mobjs marker.
+	// {
+	// 	{
+	// 		for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
+	// 		{
+	// 			if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
+	// 				continue;
+	// 			if (((mobj_t *)th)->mobjnum != mobjnum) // find matching mobj
+	// 				continue;
+	// 			UnArchiveExtVars(th); // apply variables
+	// 		}
+	// 	}
+	// 	mobjnum = READUINT32(save_p); // read a mobjnum
+	// }
 
 	lua_save_p = save_p;
 	LUA_HookNetArchive(NetUnArchive); // call the NetArchive hook in unarchive mode

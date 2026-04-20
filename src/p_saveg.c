@@ -38,6 +38,8 @@
 #include "p_slopes.h"
 #include "hu_stuff.h"
 #include "p_mobj.h"
+#include "hashtable.h"
+#include "console.h"
 
 savedata_t savedata;
 
@@ -305,6 +307,27 @@ typedef enum
 	FOLLOW     = 0x40,
 	DRONE      = 0x80,
 } player_saveflags;
+
+mobj_t *P_FindNewPosition_Hashtable(UINT32 oldposition)
+{
+	thinker_t *th;
+	mobj_t *mobj;
+	th = mobjnum_ht_linkedList_Find(oldposition);
+	if (th && ((mobj_t *)th)->mobjnum == oldposition && !(th->function == (actionf_p1)P_RemoveThinkerDelayed))
+		return (mobj_t *)th;
+	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
+	{
+		if (th->function == (actionf_p1)P_RemoveThinkerDelayed)
+			continue;
+
+		mobj = (mobj_t *)th;
+		if (mobj->mobjnum != oldposition)
+			continue;
+		return mobj;
+	}
+	CONS_Debug(DBG_GAMELOGIC, "mobj not found\n");
+	return NULL;
+}
 
 FUNCINLINE static ATTRINLINE void P_ArchivePlayer(save_t *save_p)
 {
@@ -1113,7 +1136,7 @@ static void P_NetUnArchiveWaypoints(save_t *save_p)
 		for (j = 0; j < numwaypoints[i]; j++)
 		{
 			mobjnum = P_ReadUINT32(save_p);
-			waypoints[i][j] = (mobjnum == 0) ? NULL : P_FindNewPosition(mobjnum);
+			waypoints[i][j] = (mobjnum == 0) ? NULL : P_FindNewPosition_Hashtable(mobjnum);
 		}
 	}
 }
@@ -5573,7 +5596,7 @@ static void P_NetUnArchiveThinkers(save_t *save_p)
 			delay = (void *)currentthinker;
 			if (!(mobjnum = (UINT32)(size_t)delay->caller))
 				continue;
-			delay->caller = P_FindNewPosition(mobjnum);
+			delay->caller = P_FindNewPosition_Hashtable(mobjnum);
 		}
 	}
 }
@@ -5734,77 +5757,77 @@ static void P_RelinkPointers(void)
 		{
 			temp = (UINT32)(size_t)mobj->dontdrawforviewmobj;
 			mobj->dontdrawforviewmobj = NULL;
-			if (!P_SetTarget(&mobj->dontdrawforviewmobj, P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->dontdrawforviewmobj, P_FindNewPosition_Hashtable(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "dontdrawforviewmobj not found on %d\n", mobj->type);
 		}
 		if (mobj->tracer)
 		{
 			temp = (UINT32)(size_t)mobj->tracer;
 			mobj->tracer = NULL;
-			if (!P_SetTarget(&mobj->tracer, P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->tracer, P_FindNewPosition_Hashtable(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "tracer not found on %d\n", mobj->type);
 		}
 		if (mobj->target)
 		{
 			temp = (UINT32)(size_t)mobj->target;
 			mobj->target = NULL;
-			if (!P_SetTarget(&mobj->target, P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->target, P_FindNewPosition_Hashtable(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "target not found on %d\n", mobj->type);
 		}
 		if (mobj->hnext)
 		{
 			temp = (UINT32)(size_t)mobj->hnext;
 			mobj->hnext = NULL;
-			if (!(mobj->hnext = P_FindNewPosition(temp)))
+			if (!(mobj->hnext = P_FindNewPosition_Hashtable(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "hnext not found on %d\n", mobj->type);
 		}
 		if (mobj->hprev)
 		{
 			temp = (UINT32)(size_t)mobj->hprev;
 			mobj->hprev = NULL;
-			if (!(mobj->hprev = P_FindNewPosition(temp)))
+			if (!(mobj->hprev = P_FindNewPosition_Hashtable(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "hprev not found on %d\n", mobj->type);
 		}
 		if (mobj->player && mobj->player->capsule)
 		{
 			temp = (UINT32)(size_t)mobj->player->capsule;
 			mobj->player->capsule = NULL;
-			if (!P_SetTarget(&mobj->player->capsule, P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->player->capsule, P_FindNewPosition_Hashtable(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "capsule not found on %d\n", mobj->type);
 		}
 		if (mobj->player && mobj->player->axis1)
 		{
 			temp = (UINT32)(size_t)mobj->player->axis1;
 			mobj->player->axis1 = NULL;
-			if (!P_SetTarget(&mobj->player->axis1, P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->player->axis1, P_FindNewPosition_Hashtable(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "axis1 not found on %d\n", mobj->type);
 		}
 		if (mobj->player && mobj->player->axis2)
 		{
 			temp = (UINT32)(size_t)mobj->player->axis2;
 			mobj->player->axis2 = NULL;
-			if (!P_SetTarget(&mobj->player->axis2, P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->player->axis2, P_FindNewPosition_Hashtable(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "axis2 not found on %d\n", mobj->type);
 		}
 		if (mobj->player && mobj->player->awayviewmobj)
 		{
 			temp = (UINT32)(size_t)mobj->player->awayviewmobj;
 			mobj->player->awayviewmobj = NULL;
-			if (!P_SetTarget(&mobj->player->awayviewmobj, P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->player->awayviewmobj, P_FindNewPosition_Hashtable(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "awayviewmobj not found on %d\n", mobj->type);
 		}
 		if (mobj->player && mobj->player->followmobj)
 		{
 			temp = (UINT32)(size_t)mobj->player->followmobj;
 			mobj->player->followmobj = NULL;
-			if (!P_SetTarget(&mobj->player->followmobj, P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->player->followmobj, P_FindNewPosition_Hashtable(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "followmobj not found on %d\n", mobj->type);
 		}
 		if (mobj->player && mobj->player->drone)
 		{
 			temp = (UINT32)(size_t)mobj->player->drone;
 			mobj->player->drone = NULL;
-			if (!P_SetTarget(&mobj->player->drone, P_FindNewPosition(temp)))
+			if (!P_SetTarget(&mobj->player->drone, P_FindNewPosition_Hashtable(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "drone not found on %d\n", mobj->type);
 		}
 	}
@@ -6541,7 +6564,7 @@ static void P_NetUnArchiveSectorPortals(save_t *save_p)
 			break;
 		case SECPORTAL_OBJECT:
 			id = P_ReadUINT32(save_p);
-			secportal->mobj = (id == 0) ? NULL : P_FindNewPosition(id);
+			secportal->mobj = (id == 0) ? NULL : P_FindNewPosition_Hashtable(id);
 			break;
 		default:
 			break;
@@ -6727,7 +6750,7 @@ void P_SaveGameState(save_t *save_p, savestate_t* savestate)
 	mobj_t* mobj;
 	thinker_t* th;
 	size_t s = 0;
-	uint32_t mobjnum = 1;
+	INT32 i = 1; // don't start from 0, it'd be confused with a blank pointer otherwise
 	uint64_t time = I_GetTimeUs();
 
 	if (savestate->buffer == NULL)
@@ -6735,7 +6758,7 @@ void P_SaveGameState(save_t *save_p, savestate_t* savestate)
 		savestate->buffer = Z_Malloc(10 * 1024 * 1024, PU_LEVEL, NULL); //ten megabytes?
 	}
 
-	save_p->size = SAVEGAMESIZE;
+	save_p->size = (10 * 1024 * 1024);
 	save_p->buf = savestate->buffer;
 	save_p->pos = 0;
 
@@ -6743,50 +6766,52 @@ void P_SaveGameState(save_t *save_p, savestate_t* savestate)
 	P_WriteINT32(save_p, globalmobjnum);
 
 	CV_SaveNetVars(save_p);
-
-	// assign mobj nums for pointer relinking
+	P_NetArchiveMisc(save_p, true);
+	// Assign the mobjnumber for pointer tracking
 	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 	{
-		if ((th->function == (actionf_p1)P_RemoveThinkerDelayed) || (th->function == (actionf_p1)P_NullPrecipThinker)) 
+		if (th->function == (actionf_p1)P_RemoveThinkerDelayed)
 			continue;
 
 		mobj = (mobj_t *)th;
 		if (mobj->type == MT_HOOP || mobj->type == MT_HOOPCOLLIDE || mobj->type == MT_HOOPCENTER)
 			continue;
-		mobj->mobjnum = mobjnum++;
+		mobj->mobjnum = i++;
 	}
 
-	// including nothinkers...
-	for (s = 0; s < numsectors; s++)
+	//nothinkers aren't required for synching(?), so it's disabled for now
+	//it can be made as an option if the user wants to  
+	// UINT64 s;
+	// // including nothinkers...
+	// for (s = 0; s < numsectors; s++)
+	// {
+	// 	mobj_t* thing = sectors[s].thinglist;
+
+	// 	while (thing)
+	// 	{
+	// 		if (thing->flags & MF_NOTHINK)
+	// 		{
+	// 			thing->mobjnum = mobjnum++;
+	// 		}
+	// 		thing = thing->snext;
+	// 	}
+	// }
+
+	P_NetArchivePlayers(save_p);
+	if (gamestate == GS_LEVEL)
 	{
-		mobj_t* thing = sectors[s].thinglist;
-
-		while (thing)
-		{
-			if (thing->flags & MF_NOTHINK)
-			{
-				thing->mobjnum = mobjnum++;
-			}
-			thing = thing->snext;
-		}
+		// P_NetArchiveWorld();
+		P_LocalArchiveWorld(save_p);
+		P_ArchivePolyObjects(save_p);
+		P_NetArchiveThinkers(save_p);
+		P_NetArchiveSpecials(save_p);
+		P_NetArchiveColormaps(save_p);
+		P_NetArchiveWaypoints(save_p);
 	}
-
-	P_NetArchiveMisc(save_p, true);
-	P_LocalArchivePlayers(save_p);
-	P_LocalArchiveWorld(save_p);
-	P_LocalArchivePolyObjects(save_p);
-	P_LocalArchiveThinkers(save_p);
-	// P_NetArchiveSpecials();
-	P_LocalArchiveSpecials(save_p);
-	P_LocalArchiveCameras(save_p);
-
-	// TODO: Make new P_NetArchiveRandSeed()
-
 	LUA_Archive(save_p);
-	// LUA_LocalArchive();
-	P_ArchiveLuabanksAndConsistency(save_p);
 
-	saveStateBenchmark = I_GetTimeUs() - time;
+	P_ArchiveLuabanksAndConsistency(save_p);
+	saveStateBenchmark = I_GetPreciseTime() - saveStateBenchmark;
 }
 
 // P_LoadGameState is a within-level-only mechanism for loading the game state. It must not be used cross level. Used for simulation backtracking.
@@ -6794,12 +6819,14 @@ void P_SaveGameState(save_t *save_p, savestate_t* savestate)
 
 boolean P_LoadGameState(save_t *save_p, const savestate_t* savestate)
 {
-	UINT64 time = I_GetTimeUs();
 	INT16 savedGameMap;
-
+	precise_t currentTime;
+	loadStateBenchmark = I_GetPreciseTime();
+	mobjnum_ht_linkedList_Init();
 	if (savestate->buffer == NULL)
 	{
-		CONS_Alert(CONS_ERROR, "Hell, we are going to load the invalid savestate!!!");
+		loadStateBenchmark = I_GetPreciseTime() - loadStateBenchmark;
+		return false;
 	}
 
 	save_p->buf = ((unsigned char*)savestate->buffer);
@@ -6809,30 +6836,73 @@ boolean P_LoadGameState(save_t *save_p, const savestate_t* savestate)
 	if (savedGameMap != gamemap)
 	{
 		// savestates do not work cross-level
+		// save_p = NULL; //invalidate it //FUCK
+		loadStateBenchmark = I_GetPreciseTime() - loadStateBenchmark;
 		return false;
 	}
 
+	mobjnum_ht_linkedList_Init();
+
 	globalmobjnum = P_ReadUINT32(save_p);
 
-	CV_LoadNetVars(&save_p);
-	P_NetUnArchiveMisc(save_p, true);
-	P_LocalUnArchivePlayers(save_p);
-	P_LocalUnArchiveWorld(save_p);
-	P_LocalUnArchivePolyObjects(save_p);
-	P_LocalUnArchiveThinkers(save_p);
-	// P_NetUnArchiveSpecials();
-	P_LocalUnArchiveSpecials(save_p);
-	P_LocalUnArchiveCameras(save_p);
+	con_muted = true;
+	CV_LoadNetVars(save_p);
+	con_muted = false;
+	currentTime = I_GetPreciseTime();
+	if (!P_NetUnArchiveMisc(save_p, true))
+	{
+		loadUnArchiveMisc = I_GetPreciseTime() - currentTime;
+		return false;
+	}
+	loadUnArchiveMisc = I_GetPreciseTime() - currentTime;
+	P_NetUnArchivePlayers(save_p);
 
-	LUA_UnArchive(save_p);
-	// LUA_LocalUnArchive();
-	// This is stupid and hacky _squared_, but it's in the net load code and it says it might work, so I guess it might work!
+	if (gamestate == GS_LEVEL)
+	{
+		// P_NetUnArchiveWorld();
+		currentTime = I_GetPreciseTime();
+		P_LocalUnArchiveWorld(save_p);
+		loadUnArchiveWorld = I_GetPreciseTime() - currentTime;
+		currentTime = I_GetPreciseTime();
+		P_UnArchivePolyObjects(save_p);
+		loadUnArchivePolyObjects = I_GetPreciseTime() - currentTime;
+		currentTime = I_GetPreciseTime();
+		P_NetUnArchiveThinkers(save_p);
+		loadUnArchiveThinkers = I_GetPreciseTime() - currentTime;
+		currentTime = I_GetPreciseTime();
+		P_NetUnArchiveSpecials(save_p);
+		loadUnArchiveSpecials = I_GetPreciseTime() - currentTime;
+		currentTime = I_GetPreciseTime();
+		P_NetUnArchiveColormaps(save_p);
+		loadUnArchiveColormaps = I_GetPreciseTime() - currentTime;
+		currentTime = I_GetPreciseTime();
+		P_NetUnArchiveWaypoints(save_p);
+		loadUnArchiveWaypoints = I_GetPreciseTime() - currentTime;
+		currentTime = I_GetPreciseTime();
+		P_RelinkPointers(); //candidate for optimization
+		loadRelinkPointers = I_GetPreciseTime() - currentTime;
+		currentTime = I_GetPreciseTime();
+		P_FinishMobjs();
+		loadFinishMobjs = I_GetPreciseTime() - currentTime;
+	}
+	con_muted = true;
+	currentTime = I_GetPreciseTime();
+	LUA_UnArchive(save_p); //candidate for optimization
+	loadLUA_UnArcive = I_GetPreciseTime() - currentTime;
+	con_muted = false;
+
+	// This is stupid and hacky, but maybe it'll work!
 	P_SetRandSeed(P_GetInitSeed());
-	
-	P_UnArchiveLuabanksAndConsistency(save_p);
-	loadStateBenchmark = I_GetTimeUs() - time;
 
-	return true;
+	// The precipitation would normally be spawned in P_SetupLevel, which is called by
+	// P_NetUnArchiveMisc above. However, that would place it up before P_NetUnArchiveThinkers,
+	// so the thinkers would be deleted later. Therefore, P_SetupLevel will *not* spawn
+	// precipitation when loading a netgame save. Instead, precip has to be spawned here.
+	// This is done in P_NetUnArchiveSpecials now.
+	P_UnArchiveLuabanksAndConsistency(save_p);
+	loadStateBenchmark = I_GetPreciseTime() - loadStateBenchmark;
+	// save_p = NULL; //invalidate it//why??
+	return 0;
 }
 
 void P_GameStateFreeMemory(savestate_t* savestate)

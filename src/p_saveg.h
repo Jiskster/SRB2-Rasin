@@ -42,6 +42,7 @@ typedef struct
 void P_SaveGame(save_t *save_p, INT16 mapnum);
 void P_SaveNetGame(save_t *save_p, boolean resending);
 void P_SaveGameState(save_t *save_p, savestate_t* savestate);
+mobj_t *P_FindNewPosition_Hashtable(UINT32 oldposition);
 void P_GameStateFreeMemory(savestate_t* savestate);
 boolean P_LoadGame(save_t *save_p, INT16 mapoverride);
 boolean P_LoadNetGame(save_t *save_p, boolean reloading);
@@ -92,5 +93,17 @@ void P_ReadStringN(save_t *p, char *s, size_t n);
 void P_ReadStringL(save_t *p, char *s, size_t n);
 void P_ReadString(save_t *p, char *s);
 void P_ReadMem(save_t *p, void *s, size_t n);
+
+extern precise_t loadUnArchiveMisc;
+extern precise_t loadUnArchiveWorld;
+extern precise_t loadUnArchivePolyObjects;
+extern precise_t loadUnArchiveThinkers;
+extern precise_t loadUnArchiveSpecials;
+extern precise_t loadUnArchiveColormaps;
+extern precise_t loadUnArchiveWaypoints;
+extern precise_t loadRelinkPointers;
+extern precise_t loadFinishMobjs;
+extern precise_t loadLUA_UnArcive;
+extern precise_t loadLuaBanks;
 
 #endif

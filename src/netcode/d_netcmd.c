@@ -403,7 +403,7 @@ consvar_t cv_simulatetics = CVAR_INIT("simtics", "MAX", 0, simulateTics_cons_t, 
 consvar_t cv_simmisstics = CVAR_INIT("simmisstics", "Yes", 0, CV_YesNo, NULL);
 
 static CV_PossibleValue_t simulateculldistance_cons_t[] = {{0, "MIN"}, {10000, "MAX"}, {0, NULL}};
-consvar_t cv_simulateculldistance = CVAR_INIT("simcull", "MIN", 0, simulateculldistance_cons_t, NULL);
+consvar_t cv_simulateculldistance = CVAR_INIT("simcull", "2", 0, simulateculldistance_cons_t, NULL);
 
 static CV_PossibleValue_t siminaccuracy_cons_t[] = {{1, "MIN"}, {10, "MAX"}, {0, NULL}};
 consvar_t cv_siminaccuracy = CVAR_INIT("siminaccuracy", "MIN", 0, siminaccuracy_cons_t, NULL);
