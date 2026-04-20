@@ -44,7 +44,7 @@ extern UINT8 keyboard_started;
 */
 size_t I_GetFreeMem(size_t *total);
 
-UINT64 I_GetTimeUs(void);
+precise_t I_GetTimeUs(void);
 
 int I_PreciseToMicros(precise_t d);
 
