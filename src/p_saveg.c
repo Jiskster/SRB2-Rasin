@@ -4548,13 +4548,13 @@ static void P_LocalArchiveThinkers(save_t *save_p)
 			if (j == tc_executor)
 			{
 				executor_t* savedExecutor;
-				savedExecutor = &((executor_t*)save_p)[-1];
+				savedExecutor = (executor_t*)(save_p->buf + save_p->pos - sizeof(executor_t));
 				RELINK(savedExecutor->caller);
 			}
 
 			if (j == tc_polywaypoint)
 			{
-				polywaypoint_t* savedWaypoint = &((polywaypoint_t*)save_p)[-1];
+				polywaypoint_t* savedWaypoint = (polywaypoint_t*)(save_p->buf + save_p->pos - sizeof(polywaypoint_t));
 				RELINK(savedWaypoint->target);
 			}
 		}

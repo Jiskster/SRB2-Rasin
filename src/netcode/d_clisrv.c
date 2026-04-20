@@ -1331,12 +1331,13 @@ void DetermineNetConditions();
 // static void PerformDebugRewinds();
 boolean FindMatchingTics(int* liveTicOut, int* gameTicOut);
 
-
+save_t *save_p = NULL;
 
 boolean TryRunTics(tic_t realtics, tic_t entertic)
-{
-	save_t *save_p = malloc(sizeof(save_t));
-	
+{	
+	if (!save_p)
+		save_p = malloc(sizeof(save_t));
+		
 	boolean ticking;
 
 	// the machine has lagged but it is not so bad
